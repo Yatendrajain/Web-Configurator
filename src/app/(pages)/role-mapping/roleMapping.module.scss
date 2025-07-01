@@ -1,0 +1,36 @@
+.graySelect {
+  color: var(--mui-palette-text-secondary);
+
+  .MuiSelect-select {
+    color: var(--mui-palette-text-secondary);
+  }
+
+  .MuiSvgIcon-root {
+    color: var(--mui-palette-text-secondary);
+  }
+}
+
+.grayInput {
+  flex: 1;
+
+  .MuiInputBase-input {
+    color: var(--mui-palette-text-secondary); // or use #6B7280 if needed
+  }
+
+  .MuiInputBase-input::placeholder {
+    color: var(--mui-palette-text-secondary);
+    opacity: 1;
+  }
+
+  .MuiOutlinedInput-notchedOutline {
+    border-color: var(--mui-palette-text-secondary);
+  }
+
+  &:hover .MuiOutlinedInput-notchedOutline {
+    border-color: var(--mui-palette-text-secondary);
+  }
+
+  &.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: var(--mui-palette-text-secondary);
+  }
+}

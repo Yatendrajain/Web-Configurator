@@ -1,0 +1,19 @@
+.productOrderSubnavRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.productOrderLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.productOrderMain {
+  flex: 1;
+  overflow: hidden;
+  margin: 0;
+}

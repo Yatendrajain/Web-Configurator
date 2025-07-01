@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX uq_product_type_code_active ON product_types (product_type_code) WHERE is_active;

@@ -1,0 +1,24 @@
+trigger:
+  - test
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: web-configurator-dev-vg
+  - name: imageName
+    value: $(ACR_REGISTRY)/webconfiguratordev:$(Build.BuildId)
+  - name: imageNameLatest
+    value: $(ACR_REGISTRY)/webconfiguratordev:latest
+
+steps:
+  - task: Docker@2
+    displayName: Build & Push to ACR
+    inputs:
+      command: buildAndPush
+      containerRegistry: "Web-Configurator-ACR-Connection-Dev"
+      repository: "webconfiguratordev/webconfiguratordev"
+      dockerfile: "Dockerfile"
+      tags: |
+        $(Build.BuildId)
+        latest

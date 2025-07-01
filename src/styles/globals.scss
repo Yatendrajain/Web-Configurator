@@ -1,0 +1,288 @@
+.MuiOutlinedInput-root.custom-select {
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #667085 !important;
+  padding: 0 !important;
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.05) !important;
+  display: flex;
+  align-items: center;
+
+  .MuiOutlinedInput-notchedOutline {
+    border: 1px solid #d0d5dd !important;
+    border: 1px solid #d0d5dd !important;
+  }
+
+  &:hover .MuiOutlinedInput-notchedOutline,
+  &.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border: 1px solid #d0d5dd !important;
+    border: 1px solid #d0d5dd !important;
+  }
+}
+.dynamic-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+//MAIN LAYOUT
+
+.main-content {
+  height: calc(100vh - 3rem);
+  overflow: auto;
+  margin-top: 3rem;
+}
+
+.main-content-productOrder {
+  height: calc(100vh - 3rem);
+  overflow: auto;
+  margin-top: 2rem;
+}
+
+.main-content-deep-nesting {
+  height: calc(100vh - 8rem);
+  overflow: auto;
+  margin-top: 3rem;
+  /* WebKit scrollbar styling */
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.MuiSelect-select.custom-select-text {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  width: 180px;
+  padding: 0 16px;
+  font-family: "Inter", sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 20px !important;
+  line-height: 20px !important;
+  color: #334155 !important;
+}
+
+.MuiSvgIcon-root.custom-select-icon {
+  font-size: 18px !important;
+  color: #667085 !important;
+  margin-right: 8px;
+}
+
+.custom-select {
+  input {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .MuiSelect-select {
+    padding-right: 0 !important;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+.custom-dropdown-form-control {
+  width: 100%;
+
+  .MuiSelect-select {
+    padding-right: 0 !important; // override default padding
+  }
+}
+
+.custom-select-menu {
+  width: 170px !important;
+  max-height: 220px !important;
+  overflow-y: auto !important;
+  margin-top: 4px !important;
+  background-color: #ffffff;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+
+  .MuiMenuItem-root {
+    color: #475466;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-weight: 500;
+    display: flex;
+    font-family: "Inter", sans-serif !important;
+    font-size: 14px;
+
+    &:hover {
+      background-color: #e6f3f1 !important;
+    }
+
+    &.Mui-selected {
+      background-color: #e6f3f1 !important;
+      font-weight: 600 !important;
+      color: #475466 !important;
+
+      &:hover,
+      &.Mui-focusVisible {
+        background-color: #e6f3f1 !important;
+        font-weight: 600 !important;
+        color: #475466 !important;
+      }
+    }
+  }
+}
+/* ===== CfcoLayout Styles ===== */
+
+.cfco-layout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cfco-subnav-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  overflow: hidden;
+  padding-right: 12px;
+}
+
+.cfco-upload-btn {
+  width: 165px;
+  height: 30px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background-color: #00886f !important;
+  font-family: "Inter", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  padding: 0 !important;
+
+  &:hover {
+    background-color: #00715e !important;
+  }
+}
+
+.cfco-main-content {
+  flex: 1;
+  overflow: hidden;
+}
+/* ===== ProductOrderLayout Styles ===== */
+
+.product-order-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-order-subnav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.product-order-main {
+  flex: 1;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* ===== CFRow Styles ===== */
+
+.cfco-row {
+  background-color: #fff;
+}
+
+.cfco-row-collapse {
+  background-color: #fafafa;
+}
+
+.cfco-collapse-box {
+  margin: 12px;
+  padding: 8px;
+  border-left: 3px solid #00886f;
+  background-color: #f5f7f8;
+  border-radius: 6px;
+}
+
+.cfco-collapse-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.subnav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  left: 250px;
+  top: 14vh;
+  width: calc(100% - 250px);
+  padding: 0.5rem 1rem;
+  background-color: white;
+  z-index: 10;
+}
+
+.subnav-right-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.dynamic-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+// ROLE-MAPPING
+
+.role-mapping-layout {
+  width: 100%;
+
+  .role-mapping-subnav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .role-mapping-main {
+    margin-top: 16px;
+  }
+}
+
+.common-layout-main {
+  padding-top: 10px;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-bottom: 10px;
+  background-color: #f2f4f8;
+  // min-height: 100vh;
+  box-sizing: border-box;
+}
+
+//SYSTEM FIELDS
+
+.inputCustomStyle {
+  .MuiInputBase-input {
+    font-size: 12px;
+    background-color: #f9fafb;
+    color: #667085;
+  }
+}
+
+.system-field-flex {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 16px;
+}

@@ -1,0 +1,377 @@
+[
+  {
+    "id": "XPL_CF-001",
+    "type": "CF",
+    "description": "Voltage",
+    "parent": "CF",
+    "comment": "Used in Country data",
+    "children": [
+      {
+        "id": "XPL_CO-001",
+        "type": "CO",
+        "description": "100V",
+        "comment": "Used in TCU",
+        "parent": "XPL_CF-001"
+      },
+      {
+        "id": "XPL_CO-002",
+        "type": "CO",
+        "description": "110/120V",
+        "comment": "Used in TCU",
+        "parent": "XPL_CF-001"
+      },
+      {
+        "id": "XPL_CO-003",
+        "type": "CO",
+        "description": "220/240V",
+        "comment": "Used in TCU",
+        "parent": "XPL_CF-001"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-004",
+    "type": "CF",
+    "description": "Frequency",
+    "parent": "CF",
+    "comment": "Used in Country data",
+    "children": [
+      {
+        "id": "XPL_CO-004",
+        "type": "CO",
+        "description": "50 Hz",
+        "comment": "Used in TCU",
+        "parent": "XPL_CF-004"
+      },
+      {
+        "id": "XPL_CO-005",
+        "type": "CO",
+        "description": "60 Hz",
+        "comment": "Used in FBOM",
+        "parent": "XPL_CF-004"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-005",
+    "type": "CF",
+    "description": "Frequency",
+    "parent": "CF",
+    "comment": "Used in Country data",
+    "children": [
+      {
+        "id": "XPL_CO-006",
+        "type": "CO",
+        "description": "45 Hz",
+        "comment": "Used in Special",
+        "parent": "XPL_CF-005"
+      },
+      {
+        "id": "XPL_CO-007",
+        "type": "CO",
+        "description": "55 Hz",
+        "comment": "Used in Custom",
+        "parent": "XPL_CF-005"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-002",
+    "type": "CF",
+    "description": "Power Rating",
+    "parent": "CF",
+    "comment": "For industrial use",
+    "children": [
+      {
+        "id": "XPL_CO-008",
+        "type": "CO",
+        "description": "10 kW",
+        "comment": "Used in Industry A",
+        "parent": "XPL_CF-002"
+      },
+      {
+        "id": "XPL_CO-009",
+        "type": "CO",
+        "description": "20 kW",
+        "comment": "Used in Industry B",
+        "parent": "XPL_CF-002"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-006",
+    "type": "CF",
+    "description": "Current",
+    "parent": "CF",
+    "comment": "Used in power grids",
+    "children": [
+      {
+        "id": "XPL_CO-010",
+        "type": "CO",
+        "description": "5 A",
+        "comment": "Standard rating",
+        "parent": "XPL_CF-006"
+      },
+      {
+        "id": "XPL_CO-011",
+        "type": "CO",
+        "description": "10 A",
+        "comment": "Heavy load",
+        "parent": "XPL_CF-006"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-007",
+    "type": "CF",
+    "description": "Temperature Range",
+    "parent": "CF",
+    "comment": "Thermal specs",
+    "children": [
+      {
+        "id": "XPL_CO-012",
+        "type": "CO",
+        "description": "-40°C to 85°C",
+        "comment": "Outdoor use",
+        "parent": "XPL_CF-007"
+      },
+      {
+        "id": "XPL_CO-013",
+        "type": "CO",
+        "description": "0°C to 70°C",
+        "comment": "Indoor use",
+        "parent": "XPL_CF-007"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-008",
+    "type": "CF",
+    "description": "Protection Class",
+    "parent": "CF",
+    "comment": "Electrical safety standard",
+    "children": [
+      {
+        "id": "XPL_CO-014",
+        "type": "CO",
+        "description": "IP20",
+        "comment": "Basic indoor use",
+        "parent": "XPL_CF-008"
+      },
+      {
+        "id": "XPL_CO-015",
+        "type": "CO",
+        "description": "IP67",
+        "comment": "Waterproof & dustproof",
+        "parent": "XPL_CF-008"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-009",
+    "type": "CF",
+    "description": "Connector Type",
+    "parent": "CF",
+    "comment": "Physical connector formats",
+    "children": [
+      {
+        "id": "XPL_CO-016",
+        "type": "CO",
+        "description": "Type A",
+        "comment": "Standard USB",
+        "parent": "XPL_CF-009"
+      },
+      {
+        "id": "XPL_CO-017",
+        "type": "CO",
+        "description": "Type C",
+        "comment": "Modern USB",
+        "parent": "XPL_CF-009"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-010",
+    "type": "CF",
+    "description": "Material",
+    "parent": "CF",
+    "comment": "Housing material type",
+    "children": [
+      {
+        "id": "XPL_CO-018",
+        "type": "CO",
+        "description": "Aluminum",
+        "comment": "Lightweight & durable",
+        "parent": "XPL_CF-010"
+      },
+      {
+        "id": "XPL_CO-019",
+        "type": "CO",
+        "description": "Plastic",
+        "comment": "Cost-effective",
+        "parent": "XPL_CF-010"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-011",
+    "type": "CF",
+    "description": "Mounting Type",
+    "parent": "CF",
+    "comment": "How component is installed",
+    "children": [
+      {
+        "id": "XPL_CO-020",
+        "type": "CO",
+        "description": "Wall Mount",
+        "comment": "Fixed position",
+        "parent": "XPL_CF-011"
+      },
+      {
+        "id": "XPL_CO-021",
+        "type": "CO",
+        "description": "DIN Rail",
+        "comment": "Industrial use",
+        "parent": "XPL_CF-011"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-012",
+    "type": "CF",
+    "description": "Communication Protocol",
+    "parent": "CF",
+    "comment": "Data exchange standards",
+    "children": [
+      {
+        "id": "XPL_CO-022",
+        "type": "CO",
+        "description": "Modbus",
+        "comment": "Industrial control",
+        "parent": "XPL_CF-012"
+      },
+      {
+        "id": "XPL_CO-023",
+        "type": "CO",
+        "description": "CAN",
+        "comment": "Vehicle systems",
+        "parent": "XPL_CF-012"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-013",
+    "type": "CF",
+    "description": "Color Code",
+    "parent": "CF",
+    "comment": "Wire identification",
+    "children": [
+      {
+        "id": "XPL_CO-024",
+        "type": "CO",
+        "description": "Red",
+        "comment": "Live wire",
+        "parent": "XPL_CF-013"
+      },
+      {
+        "id": "XPL_CO-025",
+        "type": "CO",
+        "description": "Black",
+        "comment": "Neutral wire",
+        "parent": "XPL_CF-013"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-014",
+    "type": "CF",
+    "description": "Operating System",
+    "parent": "CF",
+    "comment": "Compatible platforms",
+    "children": [
+      {
+        "id": "XPL_CO-026",
+        "type": "CO",
+        "description": "Linux",
+        "comment": "Open-source",
+        "parent": "XPL_CF-014"
+      },
+      {
+        "id": "XPL_CO-027",
+        "type": "CO",
+        "description": "Windows",
+        "comment": "Proprietary",
+        "parent": "XPL_CF-014"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-015",
+    "type": "CF",
+    "description": "Interface Type",
+    "parent": "CF",
+    "comment": "Device interaction ports",
+    "children": [
+      {
+        "id": "XPL_CO-028",
+        "type": "CO",
+        "description": "Ethernet",
+        "comment": "Wired network",
+        "parent": "XPL_CF-015"
+      },
+      {
+        "id": "XPL_CO-029",
+        "type": "CO",
+        "description": "Wi-Fi",
+        "comment": "Wireless connectivity",
+        "parent": "XPL_CF-015"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-016",
+    "type": "CF",
+    "description": "Input Method",
+    "parent": "CF",
+    "comment": "User interaction mode",
+    "children": [
+      {
+        "id": "XPL_CO-030",
+        "type": "CO",
+        "description": "Touch",
+        "comment": "Touchscreen support",
+        "parent": "XPL_CF-016"
+      },
+      {
+        "id": "XPL_CO-031",
+        "type": "CO",
+        "description": "Button",
+        "comment": "Physical interface",
+        "parent": "XPL_CF-016"
+      }
+    ]
+  },
+  {
+    "id": "XPL_CF-017",
+    "type": "CF",
+    "description": "Display Type",
+    "parent": "CF",
+    "comment": "Output interface format",
+    "children": [
+      {
+        "id": "XPL_CO-032",
+        "type": "CO",
+        "description": "LCD",
+        "comment": "Low power consumption",
+        "parent": "XPL_CF-017"
+      },
+      {
+        "id": "XPL_CO-033",
+        "type": "CO",
+        "description": "OLED",
+        "comment": "High contrast",
+        "parent": "XPL_CF-017"
+      }
+    ]
+  }
+]

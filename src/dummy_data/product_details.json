@@ -1,0 +1,105 @@
+{
+  "productDetails": {
+    "productType": "Bio Reactor",
+    "orderId": "P-2345 (B)",
+    "cfcoVersion": "A8",
+    "finalizedAt": "12/03/2025, 1:50PM",
+    "submittedAt": "12/05/2025, 1:50PM",
+    "submissionVersion": "2",
+    "history": "5 Times Submitted"
+  },
+  "orderDetails": [
+    {
+      "label": "Voltage",
+      "key": "voltage",
+      "original": "100V",
+      "value": "150V",
+      "options": [
+        { "value": "150V", "label": "150V" },
+        { "value": "300V", "label": "300V" },
+        { "value": "180V", "label": "180V" }
+      ]
+    },
+    {
+      "label": "Frequency",
+      "key": "frequency",
+      "original": "50 Hz",
+      "value": "60Hz",
+      "options": [
+        { "value": "50 Hz", "label": "50 Hz" },
+        { "value": "60 Hz", "label": "60 Hz" },
+        { "value": "70 Hz", "label": "70 Hz" }
+      ]
+    },
+    {
+      "label": "Process Type",
+      "key": "processType",
+      "original": "Perfusion",
+      "value": "Batch",
+      "options": [
+        { "value": "Perfusion", "label": "Perfusion" },
+        { "value": "Batch", "label": "Batch" },
+        { "value": "Fed-Batch", "label": "Fed-Batch" }
+      ]
+    },
+    {
+      "label": "Vessel Size",
+      "key": "vesselSize",
+      "original": "2000",
+      "value": "2500",
+      "options": [
+        { "value": "1000", "label": "1000" },
+        { "value": "2000", "label": "2000" },
+        { "value": "2500", "label": "2500" },
+        { "value": "5000", "label": "5000" }
+      ]
+    },
+    {
+      "label": "System",
+      "key": "system",
+      "original": "--",
+      "value": "Vessel",
+      "options": [
+        { "value": "Vessel", "label": "Vessel" },
+        { "value": "Skid", "label": "Skid" },
+        { "value": "Standalone", "label": "Standalone" }
+      ]
+    }
+  ],
+  "systemFields": [
+    {
+      "label": "Product No.",
+      "key": "productNo",
+      "value": "BB"
+    },
+    {
+      "label": "Unit ID",
+      "key": "unitId",
+      "value": "200"
+    },
+    {
+      "label": "Data Server Area",
+      "key": "dataServerArea",
+      "value": "LIT 21"
+    },
+    {
+      "label": "Alarm Server Area",
+      "key": "alarmserverarea",
+      "value": "ARC 50"
+    },
+    {
+      "label": "Process Area",
+      "key": "processarea",
+      "value": "PREP",
+      "options": [
+        { "value": "PREP2", "label": "PREP2" },
+        { "value": "Skid", "label": "Skid" },
+        { "value": "Standalone", "label": "Standalone" }
+      ]
+    }
+  ],
+  "paxVersion": {
+    "major": "1",
+    "minor": "0"
+  }
+}

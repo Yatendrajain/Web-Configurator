@@ -1,0 +1,74 @@
+{
+  "productDetails": {
+    "productType": "Bio Reactor",
+    "orderId": "P-2345 (B)",
+    "cfcoVersion": "A8",
+    "finalizedAt": "12/03/2025, 1:50PM",
+    "submittedAt": "12/05/2025, 1:50PM",
+    "submissionVersion": "2",
+    "history": "5 Times Submitted"
+  },
+  "orderDetails": [
+    {
+      "label": "Voltage",
+      "key": "voltage",
+      "original": "100V",
+      "submitted": "150V"
+    },
+    {
+      "label": "Frequency",
+      "key": "frequency",
+      "original": "50 Hz",
+      "submitted": "60Hz"
+    },
+    {
+      "label": "Process Type",
+      "key": "processType",
+      "original": "Perfusion",
+      "submitted": "Batch"
+    },
+    {
+      "label": "Vessel Size",
+      "key": "vesselSize",
+      "original": "2000",
+      "submitted": "2500"
+    },
+    {
+      "label": "System",
+      "key": "system",
+      "original": "--",
+      "submitted": "Vessel"
+    }
+  ],
+  "systemFields": [
+    {
+      "label": "Product No.",
+      "key": "productNo",
+      "value": "BB"
+    },
+    {
+      "label": "Unit ID",
+      "key": "unitId",
+      "value": "200"
+    },
+    {
+      "label": "Data Server Area",
+      "key": "dataServerArea",
+      "value": "LIT 21"
+    },
+    {
+      "label": "Alarm Server Area",
+      "key": "alarmserverarea",
+      "value": "ARC 50"
+    },
+    {
+      "label": "Process Area",
+      "key": "processarea",
+      "value": "PREP"
+    }
+  ],
+  "paxVersion": {
+    "major": "1",
+    "minor": "0"
+  }
+}

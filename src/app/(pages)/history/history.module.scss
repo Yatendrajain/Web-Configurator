@@ -1,0 +1,38 @@
+.tableWrapper {
+  margin-top: 3rem;
+  height: calc(100vh - 3rem);
+  overflow: auto;
+}
+
+.editProductContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 72vh;
+  overflow: auto;
+  margin-bottom: 5%;
+  margin-top: 2rem;
+}
+
+.historyButtons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.historyDetailsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: calc(100vh - 8rem);
+  overflow: auto;
+  margin-bottom: 5%;
+  margin-top: 3rem;
+}
+
+.systemFieldsTitle {
+  padding: 2rem;
+  background-color: white;
+  border-radius: 1rem;
+}
