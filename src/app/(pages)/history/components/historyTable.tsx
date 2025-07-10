@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { historyColumns } from "@/app/(pages)/history/components/HistoryColumn";
 import DynamicTable from "@/components/DynamicTable/DynamicTable";
 import { HistoryData, HistoryTableProps } from "../types/interface";
 import { useAppSelector } from "@/app/hooks/reduxHooks";
 // import { fetchHistoryData } from "@/services/history/history.service";
 import { useSelector, useDispatch } from "react-redux";
 import { selectSearchQuery } from "@/app/store/searchSlice";
+import { formatDateTimeMMDDYYYY } from "@/utils/formatters";
+import HistoryActionButtons from "./HistoryActionButtons";
+import { Chip, Tooltip } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 interface HistoryApiResponseItem {
   itemNumber: string;
@@ -18,6 +21,7 @@ interface HistoryApiResponseItem {
   createdAt?: string;
   submissionVersion?: string;
   productTypeId?: string;
+  id: string;
 }
 
 export default function HistoryTable({ search }: HistoryTableProps) {
@@ -28,9 +32,12 @@ export default function HistoryTable({ search }: HistoryTableProps) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const { productTypeCode } = useAppSelector((state) => state.productType);
+  const { productTypeCode, productTypeId } = useAppSelector(
+    (state) => state.productType,
+  );
   const searchQuery = useSelector(selectSearchQuery);
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const fetchData = useCallback(
     async (pageToFetch: number, reset = false) => {
@@ -46,6 +53,7 @@ export default function HistoryTable({ search }: HistoryTableProps) {
               "pipelineStatus",
               "productTypeId",
               "orderName",
+              "id",
             ],
             users: ["name"],
           },
@@ -58,7 +66,7 @@ export default function HistoryTable({ search }: HistoryTableProps) {
           pageLimit: 15,
           page: pageToFetch,
           filters: {
-            productTypeCode: productTypeCode,
+            productTypeId: productTypeId,
             ...(searchQuery ? { globalSearch: searchQuery } : {}),
           },
         };
@@ -81,14 +89,17 @@ export default function HistoryTable({ search }: HistoryTableProps) {
           name: item?.orderName ?? "--",
           updatedBy: item?.userDetails?.name || "--",
           status: item?.pipelineStatus || "--",
-          lastSubmitted: item?.createdAt || "--",
+          id: item?.id,
+          lastSubmitted:
+            formatDateTimeMMDDYYYY(item?.createdAt as string) || "--",
         }));
+
         if (reset) {
           setData(transformedData);
         } else {
           setData((prev) => [...prev, ...transformedData]);
         }
-        setHasMore(transformedData.length > 0);
+        setHasMore(json.totalCount === transformedData.length);
       } catch {
         setHasMore(false);
       } finally {
@@ -96,7 +107,7 @@ export default function HistoryTable({ search }: HistoryTableProps) {
         setLoadingMore(false);
       }
     },
-    [sortOrder, sortBy, productTypeCode, searchQuery],
+    [sortOrder, sortBy, searchQuery, productTypeId],
   );
 
   useEffect(() => {
@@ -133,9 +144,121 @@ export default function HistoryTable({ search }: HistoryTableProps) {
     }
   };
 
+  const handleEdit = useCallback(
+    (row: HistoryData, type: string) => {
+      if (type === "view") {
+        router.push(`/history/view/${row.id}`);
+      } else {
+        router.push(`/history/clone/${row.id}`);
+      }
+    },
+    [router],
+  );
+
+  const columns = useMemo(
+    () => [
+      {
+        id: "orderIdVersion",
+        label: "Order ID (Version)",
+        sortable: false,
+        render: (_: unknown, row: HistoryData) =>
+          `${row.itemNumber} (${row.itemNumberVersion})`,
+      },
+      {
+        id: "name",
+        label: "Name",
+        sortable: false,
+        render: (_: unknown, row: HistoryData) => {
+          return (
+            <Tooltip title={row.name} arrow placement="bottom">
+              <span
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "inline-block",
+                  maxWidth: 150,
+                }}
+              >
+                {row.name}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        id: "updatedBy",
+        label: "Updated By",
+        sortByName: "userName",
+        sortable: true,
+      },
+      {
+        id: "status",
+        label: "Status",
+        sortable: false,
+        render: (_: unknown, row: HistoryData) => (
+          <Chip
+            label={String(row.pipelineStatus ?? "-")}
+            size="small"
+            sx={{
+              backgroundColor:
+                row.pipelineStatus === "Failed" ? "#FEE4E2" : "#ECFDF3",
+              color: row.pipelineStatus === "Failed" ? "#D92D20" : "#027A48",
+              fontWeight: 500,
+              fontSize: "0.7rem",
+            }}
+          />
+        ),
+      },
+      {
+        id: "lastSubmitted",
+        label: "Last Submitted",
+        sortByName: "createdAt",
+        sortable: true,
+        render: (_: unknown, row: HistoryData) => {
+          return (
+            <Tooltip title={row.lastSubmitted} arrow placement="bottom">
+              <span
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  display: "inline-block",
+                  maxWidth: 150,
+                }}
+              >
+                {row.lastSubmitted}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        id: "submissionVersion",
+        label: "Submission Version",
+        align: "center",
+        sortable: false,
+        render: (_: unknown, row: HistoryData) => `${row.submissionVersion}`,
+      },
+      {
+        id: "actions",
+        label: "Action",
+        align: "center",
+        sortable: false,
+        render: (_: unknown, row: HistoryData) => (
+          <HistoryActionButtons
+            order={row}
+            onEdit={(row, type) => handleEdit(row, type)}
+          />
+        ),
+      },
+    ],
+    [handleEdit],
+  );
+
   return (
     <DynamicTable
-      columns={historyColumns}
+      columns={columns}
       data={memoizedData}
       showEditAction={false}
       loading={loading && page === 1}

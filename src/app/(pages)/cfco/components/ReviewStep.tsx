@@ -1,34 +1,35 @@
 import React, { useState, useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import CustomSearchBar from "@/components/CustomSearchBar";
-import { ChangeType } from "@/constants/common/lookup_entries_upload";
+import { ChangeTypes } from "@/constants/common/enums/lookup_entries_upload";
 import {
   AddCircle,
   RemoveCircle,
   Edit,
   CheckCircle,
 } from "@mui/icons-material";
+import { DiffEntry } from "@/constants/common/enums/diff_entry";
+import CustomDropdown from "@/components/customDropdown";
+import { Option } from "../../../../interfaces/dropDown";
 
 const getChangeTypeIcon = (type: string) => {
   switch (type) {
-    case ChangeType.ADDED:
+    case ChangeTypes.ADDED:
       return <AddCircle style={{ color: "green", verticalAlign: "middle" }} />;
-    case ChangeType.MODIFIED:
+    case ChangeTypes.MODIFIED:
       return <Edit style={{ color: "orange", verticalAlign: "middle" }} />;
-    case ChangeType.REMOVED:
+    case ChangeTypes.REMOVED:
       return <RemoveCircle style={{ color: "red", verticalAlign: "middle" }} />;
-    case ChangeType.UNCHANGED:
+    case ChangeTypes.UNCHANGED:
     default:
       return <CheckCircle style={{ color: "gray", verticalAlign: "middle" }} />;
   }
 };
 
-type RowData = Record<string, string | number>;
-
 interface ReviewStepProps {
   selectedFile: File | null;
   fileURL: string | null;
-  sheetData: RowData[];
+  sheetData: DiffEntry[];
 }
 
 const ReviewStep: React.FC<ReviewStepProps> = ({
@@ -37,16 +38,32 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
   sheetData,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [changeTypeQuery, setChangeTypeQuery] = useState<string>("");
 
-  const filteredData = useMemo<RowData[]>(() => {
-    if (!searchQuery) return sheetData;
-    const query = searchQuery.toLowerCase();
-    return sheetData.filter((row) =>
-      Object.values(row).some((value) =>
-        String(value).toLowerCase().includes(query),
-      ),
-    );
-  }, [searchQuery, sheetData]);
+  const filteredData = useMemo<DiffEntry[]>(() => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      sheetData = sheetData.filter((row) =>
+        Object.values(row).some((value) =>
+          String(value).toLowerCase().includes(query),
+        ),
+      );
+    }
+    if (changeTypeQuery && changeTypeQuery != "NONE") {
+      sheetData = sheetData.filter(
+        (row) => row.changeType.toUpperCase() == changeTypeQuery.toUpperCase(),
+      );
+    }
+    return sheetData;
+  }, [searchQuery, sheetData, changeTypeQuery]);
+
+  const changeTypeOptions: Option[] = [
+    ...Object.values(ChangeTypes).map((value) => ({
+      value,
+      label: value,
+    })),
+    { value: "NONE", label: "NONE" },
+  ];
 
   return (
     <>
@@ -55,6 +72,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           display: "flex",
           justifyContent: "space-between",
           flexWrap: "wrap",
+          gap: "8px",
         }}
       >
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
@@ -73,18 +91,48 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
           </b>
         </Typography>
 
-        <CustomSearchBar
-          sx={{ height: 32, minHeight: 32, width: 160, marginBottom: 10 }}
-          value={searchQuery}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setSearchQuery(e.target.value)
-          }
-        />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}
+        >
+          <CustomDropdown
+            width={160}
+            defaultOption={"NONE"}
+            allOptions={changeTypeOptions}
+            onChange={(value: string) => setChangeTypeQuery(value)}
+          />
+          <CustomSearchBar
+            sx={{ height: 32, minHeight: 32, width: 160, marginBottom: 10 }}
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
+          />
+        </Box>
       </Box>
 
-      <Box sx={{ overflowX: "auto", maxHeight: "50vh" }}>
+      <Box
+        sx={{
+          overflowX: "auto",
+          height: "100%",
+          minHeight: 200,
+          maxHeight: 250,
+        }}
+      >
         {filteredData.length === 0 ? (
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: 150,
+            }}
+          >
             No data found for the current filter or file is empty.
           </Typography>
         ) : (
@@ -124,8 +172,8 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                 <tr key={idx}>
                   {Object.entries(row).map(([key, value], i, arr) => {
                     const isLast = i === arr.length - 1;
-                    const noWrap = key === "Identifier" || key === "Parent";
-                    const isChangeType = key === "Change Type";
+                    const noWrap = key === "identifier" || key === "parent";
+                    const isChangeType = key === "changeType";
 
                     return (
                       <td

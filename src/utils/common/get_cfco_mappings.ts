@@ -11,7 +11,9 @@ export interface MappingItem {
   [key: string]: unknown;
 }
 
-export const getCFCOMappings = (mapping: Array<MappingItem>) => {
+export const getCFCOMappings = (
+  mapping: Array<MappingItem>,
+): [Record<string, string>, Record<string, Array<string>>] => {
   const dictionary: Record<string, string> = {};
   const optionsMap: Record<string, Array<string>> = {};
 

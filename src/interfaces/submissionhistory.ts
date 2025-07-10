@@ -9,3 +9,13 @@ export interface SubmissionHistoryProps {
   onClose: () => void;
   submissions: Submission[];
 }
+
+export interface HistoryOrderField {
+  key: string;
+  label: string;
+  original: string;
+  value: string | undefined;
+  options?: { value: string; label: string }[];
+  disabled?: boolean;
+  source: "mapped" | "unmapped";
+}

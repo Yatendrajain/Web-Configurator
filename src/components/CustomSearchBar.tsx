@@ -77,13 +77,27 @@ const CustomSearchBar: React.FC<CustomSearchBarProps> = ({
         placeholder={placeholderText}
         value={value}
         classes={{ root: "custom-select" }}
+        type="search"
         onChange={hanndleOnchange}
         onKeyPress={handleKeyPress}
         inputProps={{ "aria-label": `search-${keyword?.toLowerCase() || ""}` }}
       />
+      {/* {value && (
+        <span
+          onClick={() => onSearch && onSearch('')}
+          style={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <Icon name="inputClose" size={15} color="black" />
+        </span>
+          )} */}
       <span
         onClick={() => onSearch && onSearch(value)}
-        style={{ cursor: "pointer" }}
+        style={{ cursor: "pointer", display: "flex" }}
       >
         <Icon name="search" size={15} />
       </span>

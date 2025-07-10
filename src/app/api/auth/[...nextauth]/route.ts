@@ -1,7 +1,6 @@
-export const runtime = "nodejs";
-
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
+import { NextAuthOptions } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -9,23 +8,35 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.AZURE_AD_CLIENT_ID!,
       clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
       tenantId: process.env.AZURE_AD_TENANT_ID!,
-      authorization: { params: { scope: "openid profile email User.Read" } },
+      authorization: {
+        params: {
+          scope: "openid profile email User.Read",
+        },
+      },
     }),
   ],
-  pages: {
-    signIn: "/auth/signin",
+  events: {
+    async signOut() {
+      console.log("User signed out - clearing session");
+    },
   },
-  session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
-    async jwt({ token, account }) {
-      if (account) token.accessToken = account.access_token;
+    async jwt({ token, account, profile }) {
+      if (
+        account &&
+        profile &&
+        Array.isArray((profile as { roles?: string[] }).roles)
+      ) {
+        token.roles = (profile as { roles?: string[] }).roles;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (!session.user) {
-        session.user = { name: null, email: null, image: null };
-      }
-      session.user.accessToken = token.accessToken as string;
+      session.user.roles = (token.roles as string[]) || [];
       return session;
     },
   },

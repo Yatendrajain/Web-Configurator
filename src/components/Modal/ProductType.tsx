@@ -6,15 +6,13 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton,
   FormControl,
   Select,
   MenuItem,
   Typography,
   CircularProgress,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { ProductTypePopupProps } from "@/interfaces/productType";
@@ -22,37 +20,39 @@ import { useProductTypes } from "@/services/productTypes/useProductTypes";
 
 const ProductTypePopup: React.FC<ProductTypePopupProps> = ({
   open,
-  onClose, // we will block this externally until submit
+  onClose,
   originProduct,
   onProductTypeSelected,
 }) => {
   const [selectedType, setSelectedType] = useState("");
-  const [mounted, setMounted] = useState(false);
   const { productTypeOptions, loading } = useProductTypes(originProduct);
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-    const stored = Cookies.get("productType");
-    if (stored) onClose(); // auto close if already selected
+    const cookie = Cookies.get("productType");
+    if (cookie) {
+      try {
+        JSON.parse(cookie);
+        onClose(); // Close popup if valid cookie exists
+      } catch {
+        Cookies.remove("productType"); // Corrupted cookie cleanup
+      }
+    }
   }, [onClose]);
 
+  const selected = useMemo(
+    () => productTypeOptions.find((opt) => opt.value === selectedType),
+    [productTypeOptions, selectedType],
+  );
+
   const handleSubmit = () => {
-    const selected = productTypeOptions.find(
-      (opt) => opt.value === selectedType,
-    );
-    if (selected) {
-      const cookieValue = selected.productTypeCode || selected.label;
-      Cookies.set("productType", cookieValue, { expires: 365 });
-      onProductTypeSelected?.(selected);
-      onClose();
+    if (!selected) return;
 
-      // ✅ Refresh current route to reflect cookie update
-      router.refresh(); // next/navigation - triggers soft reload
-    }
+    Cookies.set("productType", JSON.stringify(selected), { expires: 365 });
+    onProductTypeSelected?.(selected);
+    onClose();
+    router.refresh(); // Trigger soft reload
   };
-
-  if (!mounted) return null;
 
   return (
     <Dialog
@@ -61,50 +61,62 @@ const ProductTypePopup: React.FC<ProductTypePopupProps> = ({
       maxWidth="xs"
       fullWidth
       disableEscapeKeyDown
-      hideBackdrop={false}
-      BackdropProps={{ sx: { backgroundColor: "#D9D9D96B" } }}
+      slotProps={{
+        backdrop: { sx: { backgroundColor: "#D9D9D96B" } },
+        paper: {
+          sx: {
+            borderRadius: 3,
+          },
+        },
+      }}
     >
       <DialogTitle
         sx={{
           fontWeight: 600,
+          fontSize: 16,
           display: "flex",
           justifyContent: "space-between",
+          paddingBottom: 0,
         }}
       >
         Select Product Type
-        {/* ❌ Remove close button to block manual close */}
-        <IconButton disabled size="small" sx={{ visibility: "hidden" }}>
-          <CloseIcon />
-        </IconButton>
       </DialogTitle>
 
       <DialogContent>
-        <Typography variant="body1" sx={{ mb: 2 }}>
+        <Typography variant="body1" sx={{ mb: 2, fontSize: 14 }}>
           Please choose your product type:
         </Typography>
 
-        <FormControl fullWidth disabled={loading}>
-          <Select
-            labelId="product-type-label"
-            value={selectedType}
-            displayEmpty
-            onChange={(e) => setSelectedType(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>Select Product Type</em>
-            </MenuItem>
-            {productTypeOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-
-          {loading && (
-            <Typography variant="caption" sx={{ mt: 1 }}>
-              <CircularProgress size={16} sx={{ mr: 1 }} />
+        <FormControl fullWidth disabled={loading} size="small">
+          {loading ? (
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 1,
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CircularProgress size={20} sx={{ mr: 1 }} />
               Loading options...
             </Typography>
+          ) : (
+            <Select
+              value={selectedType}
+              displayEmpty
+              onChange={(e) => setSelectedType(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>Select Product Type</em>
+              </MenuItem>
+              {productTypeOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
           )}
         </FormControl>
       </DialogContent>
@@ -113,10 +125,10 @@ const ProductTypePopup: React.FC<ProductTypePopupProps> = ({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!selectedType}
+          disabled={!selected}
           sx={{
             textTransform: "none",
-            backgroundColor: selectedType ? "#00886F" : "#D3D3D3",
+            backgroundColor: selected ? "#00886F" : "#D3D3D3",
             color: "#FFF",
           }}
         >

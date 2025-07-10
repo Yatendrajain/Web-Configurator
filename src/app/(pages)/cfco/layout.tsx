@@ -7,6 +7,12 @@ import Icon from "@/components/IconConfig";
 import UploadMasterDataModal from "./components/UploadMasterDataModal";
 import { Box, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import {
+  clearCFCOSearchQuery,
+  setCFCOSearchQuery,
+} from "@/app/store/cfcoSearchSlice";
+import { usePathname } from "next/navigation";
 
 export default function CfcoLayout({
   children,
@@ -18,6 +24,23 @@ export default function CfcoLayout({
   const [productTypeId, setProductTypeId] = useState<string>("");
 
   useEffect(() => {}, [productTypeId]);
+
+  const pathname = usePathname();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(clearCFCOSearchQuery());
+  }, [dispatch, pathname]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchValue(value);
+  };
+
+  const onSearch = (event: string) => {
+    const trimmed = event.trim();
+    dispatch(setCFCOSearchQuery(trimmed));
+  };
 
   return (
     <Box className="cfco-layout-container">
@@ -36,12 +59,13 @@ export default function CfcoLayout({
             <CustomSearchBar
               keyword="Identifier"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onSearch={onSearch}
+              onChange={(e) => handleChange(e)}
               sx={{ width: "20%", paddingInline: "0.7rem" }}
             />
 
             <CustomDropdown width={100} onChange={setProductTypeId} />
-            <CustomDropdown width={100} fetchVersions={true} />
+            <CustomDropdown width={150} fetchVersions={true} />
           </Box>
         }
       />

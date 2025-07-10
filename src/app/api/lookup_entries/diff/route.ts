@@ -1,37 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processUploadedCFCOFile } from "./diff_lookup_entries";
+import { executeDiffLookupEntries } from "./diff_lookup_entries";
+import { DiffAndUploadLookupEntriesRequestSchema } from "../common_models/diff_and_upload_req_body";
+import { applyCustomMiddlewares } from "../../middlewares/apply_middlewares";
+import { CustomAPIError } from "@/utils/api/custom_error";
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file");
-    const lookup_version = formData.get("lookup_version");
+    await applyCustomMiddlewares(request);
 
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "No valid file uploaded." },
-        { status: 400 },
-      );
-    }
+    const rawFormData = await request.formData();
+    const payload = {
+      productTypeId: rawFormData.get("productTypeId")?.toString(),
+      file: rawFormData.get("file") as File | null,
+    };
 
-    const fileName = file.name;
+    const parsedFormData =
+      DiffAndUploadLookupEntriesRequestSchema.parse(payload);
 
-    const result = await processUploadedCFCOFile(
-      file,
-      lookup_version as string,
-      fileName,
-    );
+    const [res, statusCode] = await executeDiffLookupEntries(parsedFormData);
 
-    return NextResponse.json(result, { status: result.status });
+    return NextResponse.json(res, { status: statusCode });
   } catch (error) {
-    console.error("Error uploading CFCO file:", error);
+    const { clientMessage, innerError, statusCode, traceback } = (() => {
+      if (error instanceof CustomAPIError) {
+        return {
+          clientMessage: error.clientMessage,
+          innerError: error.innerError,
+          statusCode: error.statusCode,
+          traceback: error.stack,
+        };
+      }
+      return {
+        clientMessage: "Error fetching Diff!",
+        innerError: error,
+        statusCode: 500,
+        traceback: error instanceof Error ? error.stack : null,
+      };
+    })();
+
+    console.error(clientMessage, error);
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Error uploading CFCO file",
-        traceback: error instanceof Error ? error.stack : null,
+        message: clientMessage,
+        error: innerError,
+        traceback: traceback,
       },
-      { status: 500 },
+      { status: statusCode },
     );
   }
 }

@@ -8,19 +8,22 @@ import Icon from "@/components/IconConfig";
 import { getBreadcrumbLabels, getHrefByIndex } from "@/utils/app/breadcrumbs";
 import { breadcrumbMap } from "@/app/lib/breadcrumbs/map";
 
-const handleDynamicRoute = (pathname: string) => {
-  const parentRoute = pathname.split("/").filter(Boolean);
-  if (parentRoute[0] === "history") {
-    if (pathname.includes("view")) {
-      return "/history/details";
-    } else if (pathname.includes("edit")) {
-      return "/history/clone";
-    } else {
-      return pathname;
-    }
-  } else {
-    return pathname;
-  }
+const handleDynamicRoute = (pathname: string): string => {
+  const [parentRoute] = pathname.split("/").filter(Boolean);
+
+  const routeMap: Record<string, (path: string) => string> = {
+    history: (path) => {
+      if (path.includes("view")) return "/history/details";
+      if (path.includes("clone")) return "/history/clone";
+      return path;
+    },
+    productOrder: (path) => {
+      if (path.includes("edit")) return "/productOrder/edit";
+      return path;
+    },
+  };
+
+  return routeMap[parentRoute]?.(pathname) || pathname;
 };
 
 const DynamicBreadcrumbs: React.FC = () => {
@@ -64,6 +67,7 @@ const DynamicBreadcrumbs: React.FC = () => {
             key={href}
             component={NextLink}
             href={href}
+            fontSize={14}
             underline="hover"
             color="text.secondary"
           >

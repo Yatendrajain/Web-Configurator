@@ -23,6 +23,7 @@ const iconMap = {
   clock: "assets/icons/clock.svg",
   clone: "assets/icons/clone.svg",
   close: "assets/icons/close.svg",
+  inputClose: "assets/icons/close.png",
   configuration: "assets/icons/configuration.svg",
   connect: "assets/icons/connect.svg",
   dashboard: "assets/icons/dashboard.svg",

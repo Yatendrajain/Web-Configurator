@@ -28,11 +28,15 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
       {/* Main row */}
       <TableRow hover sx={{ height: 36 }}>
         <TableCell sx={{ ...subTableCellStyle, width: 40 }}>
-          <IconButton size="small" onClick={() => setOpen(!open)}>
+          <IconButton
+            size="small"
+            onClick={() => setOpen(!open)}
+            sx={{ marginLeft: "7.5px" }}
+          >
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </TableCell>
-        <TableCell
+        {/* <TableCell
           sx={{
             ...tableCellStyle,
             width: 100,
@@ -43,7 +47,7 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
           }}
         >
           {row.type}
-        </TableCell>
+        </TableCell> */}
         <TableCell
           sx={{
             ...tableCellStyle,
@@ -109,7 +113,7 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
                 maxWidth: 120,
               }}
             >
-              {co.type}
+              {co.id}
             </TableCell>
             <TableCell
               sx={{
@@ -121,7 +125,7 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
                 maxWidth: 180,
               }}
             >
-              {co.id}
+              {co.description}
             </TableCell>
             <TableCell
               sx={{
@@ -133,7 +137,7 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
                 maxWidth: 220,
               }}
             >
-              {co.description}
+              {co.parent}
             </TableCell>
             <TableCell
               sx={{
@@ -145,7 +149,7 @@ export default function CFRow({ row, forceOpen }: CFRowProps) {
                 maxWidth: 180,
               }}
             >
-              {co.parent}
+              {co.comment}
             </TableCell>
             <TableCell
               sx={{

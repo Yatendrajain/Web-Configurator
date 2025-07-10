@@ -8,8 +8,6 @@ import {
   OutlinedInput,
   SelectChangeEvent,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import "@/styles/globals.scss";
 import { CustomDropdownProps } from "@/interfaces/dropDown";
 import { useAppDispatch } from "@/app/hooks/reduxHooks";
 import {
@@ -17,24 +15,30 @@ import {
   setProductTypeName,
   setProductTypeId,
 } from "@/features/productType/productTypeSlice";
+import { CustomDropdownIcon } from "./customDropdownIcon";
+import { fetchLookupVersions, fetchProductTypes } from "@/services/common";
+import Cookies from "js-cookie";
+// import { useProductTypes } from "@/services/productTypes/useProductTypes";
+// import { ApiVersion } from "@/interfaces";
 
 interface Option {
   value: string;
   label: string;
   productTypeCode?: string;
+  subValue?: string;
 }
 
-interface ApiProductType {
-  id: string;
-  name: string;
-  isActive?: boolean;
-  productTypeCode?: string;
-}
+// interface ApiProductType {
+//   id: string;
+//   name: string;S
+//   isActive?: boolean;
+//   productTypeCode?: string;
+// }
 
-interface ApiVersion {
-  id: string;
-  versionName: string;
-}
+// interface ApiVersion {
+//   id: string;
+//   versionName: string;
+// }
 
 const CustomDropdown: React.FC<
   CustomDropdownProps & {
@@ -49,6 +53,7 @@ const CustomDropdown: React.FC<
   defaultOption = "",
   fetchVersions = false,
   onChange,
+  disabled,
 }) => {
   const safeDefaultOption = defaultOption || "";
   const safeAllOptions = allOptions || [];
@@ -64,82 +69,63 @@ const CustomDropdown: React.FC<
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (safeAllOptions.length === 0) {
-      const fetchOptions = async () => {
-        try {
-          if (fetchVersions) {
-            // Fetch version data from backend
-            const requestBody = {
-              filters: {},
-              includeFields: { lookupVersions: ["id", "versionName"] },
-              orderBy: "desc",
-              pageLimit: 100,
-              page: 1,
-            };
-            const encodedData = encodeURIComponent(JSON.stringify(requestBody));
-            const res = await fetch(
-              `/api/lookup_versions/list?data=${encodedData}`,
-            );
-            const responseData = await res.json();
-            if (!res.ok) throw new Error("Failed to fetch versions");
-            const versions: ApiVersion[] = responseData?.list || [];
-            const apiOptions: Option[] = versions.map((ver) => ({
-              value: ver.id,
-              label: ver.versionName,
-            }));
-            setOptions(apiOptions);
-            if (apiOptions.length > 0) {
-              setValue(apiOptions[0].value);
-              if (onChange) onChange(apiOptions[0].value);
-            }
-            return;
-          }
-          // Default: fetch product types
-          const requestBody = {
-            filters: { productTypeCode: originProduct },
-            includeFields: {
-              productTypes: ["id", "name", "isActive", "productTypeCode"],
-              users: ["name", "azureUserId"],
-            },
-            sortBy: "updatedAt",
-            orderBy: "desc",
-            includeUserDetails: true,
-            maxPageLimit: true,
-            pageLimit: 1,
-            page: 1,
-          };
-          const encodedData = encodeURIComponent(JSON.stringify(requestBody));
+    const cookie: string = Cookies.get("productType") as string;
+    const storedProductType = JSON.parse(cookie);
 
-          const res = await fetch(
-            `/api/product_types/list?data=${encodedData}`,
-          );
+    const loadOptions = async () => {
+      try {
+        let options: Option[] = [];
 
-          const responseData = await res.json();
+        if (fetchVersions) {
+          const versions = await fetchLookupVersions();
 
-          if (!res.ok) throw new Error("Failed to fetch product types");
-          const productTypes: ApiProductType[] = responseData?.list || [];
-          const apiOptions: Option[] = productTypes.map((type) => ({
-            value: type.id,
-            label: type.name,
-            productTypeCode: type.productTypeCode,
+          options = versions.map((ver) => ({
+            value: ver.id,
+            label: ver.versionName,
+            subValue: `Created by ${ver.userDetails?.name || "N/A"} <br/> Updated on ${new Date(
+              ver.createdAt,
+            ).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })}`,
           }));
-
-          setOptions(apiOptions);
-
-          if (apiOptions.length > 0) {
-            setValue(apiOptions[0].value);
-            dispatch(setProductTypeCode(apiOptions[0].productTypeCode || ""));
-            dispatch(setProductTypeName(apiOptions[0].label || ""));
-            dispatch(setProductTypeId(apiOptions[0].value));
-            if (onChange) onChange(apiOptions[0].value);
-          }
-        } catch (error) {
-          console.error("Error fetching product types or versions:", error);
+        } else {
+          options = await fetchProductTypes(originProduct);
         }
-      };
-      fetchOptions();
+
+        setOptions(options);
+
+        if (options.length > 0) {
+          const first = options[0];
+          setValue(
+            !fetchVersions && storedProductType
+              ? storedProductType.value
+              : first.value,
+          );
+          onChange?.(first.value);
+
+          if (!fetchVersions) {
+            dispatch(setProductTypeCode(first.productTypeCode || ""));
+            dispatch(setProductTypeName(first.label));
+            dispatch(setProductTypeId(first.value));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dropdown options:", err);
+      }
+    };
+
+    if (!safeAllOptions?.length) {
+      loadOptions();
     }
-  }, [originProduct, dispatch, safeAllOptions.length, fetchVersions, onChange]);
+  }, [
+    originProduct,
+    dispatch,
+    fetchVersions,
+    onChange,
+    safeAllOptions?.length, // ✅ Remove unnecessary dependency `productTypeOptions`
+  ]);
 
   const handleChange = (event: SelectChangeEvent<string>) => {
     const selected = options.find((opt) => opt.value === event.target.value);
@@ -150,6 +136,8 @@ const CustomDropdown: React.FC<
       dispatch(setProductTypeId(selected.value));
       if (onChange) onChange(selected.value);
     }
+    if (!fetchVersions && selected)
+      Cookies.set("productType", JSON.stringify(selected), { expires: 365 });
   };
 
   return (
@@ -161,6 +149,11 @@ const CustomDropdown: React.FC<
       <Select
         value={value}
         onChange={handleChange}
+        disabled={disabled}
+        renderValue={(selected) => {
+          const selectedOption = options.find((opt) => opt.value === selected);
+          return selectedOption?.label || "";
+        }}
         input={
           <OutlinedInput
             notched={false}
@@ -176,7 +169,7 @@ const CustomDropdown: React.FC<
             }}
           />
         }
-        IconComponent={() => <ExpandMoreIcon className="custom-select-icon" />}
+        IconComponent={CustomDropdownIcon}
         inputProps={{
           "aria-label": "Select Product Type",
           classes: { root: "custom-select-text" },
@@ -188,24 +181,35 @@ const CustomDropdown: React.FC<
         MenuProps={{
           PaperProps: {
             className: "custom-select-menu",
-            style: { minWidth: width, maxWidth: 400 },
+            style: { minWidth: fetchVersions ? 250 : width, maxWidth: 400 },
           },
         }}
       >
-        {options.map(({ value, label }) => (
+        {options.map(({ value, label, subValue }) => (
           <MenuItem
             key={value}
             value={value}
             style={{
-              maxWidth: 380,
+              maxWidth: 350,
               overflow: "visible",
               whiteSpace: "normal",
               textOverflow: "initial",
               wordBreak: "break-word",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
             }}
             title={label}
           >
-            {label}
+            <span style={{ fontWeight: fetchVersions ? 500 : 600 }}>
+              {label}
+            </span>
+            {fetchVersions && subValue && (
+              <span
+                style={{ fontSize: "12px", color: "#6B7280" }}
+                dangerouslySetInnerHTML={{ __html: subValue }}
+              />
+            )}
           </MenuItem>
         ))}
       </Select>

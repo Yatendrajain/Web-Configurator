@@ -1,4 +1,4 @@
-import { tactonApiRequest } from "@/app/lib/tacton_client";
+import { tactonApiRequest } from "@/app/lib/api/tacton_client";
 import { ListOrdersDataRequest } from "./models";
 import { REQUEST_METHODS } from "@/constants/common/enums/request_methods";
 import { xmlStringToJson } from "@/utils/api/xml_to_json";

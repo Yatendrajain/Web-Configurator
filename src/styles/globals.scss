@@ -277,6 +277,24 @@
     font-size: 12px;
     background-color: #f9fafb;
     color: #667085;
+    font-weight: bold;
+  }
+
+  .MuiOutlinedInput-root {
+    border-radius: 8px;
+
+    .MuiOutlinedInput-notchedOutline {
+      border: 1px solid #ccc;
+      border-color: #ccc; // default
+    }
+
+    &:hover .MuiOutlinedInput-notchedOutline {
+      border: 1px solid #9a9a9a;
+    }
+
+    &.Mui-focused .MuiOutlinedInput-notchedOutline {
+      border: 1px solid #545454;
+    }
   }
 }
 

@@ -13,7 +13,6 @@ import CustomSearchBar from "@/components/CustomSearchBar";
 import { usePathname } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setSearchQuery } from "@/app/store/searchSlice";
-import ClearSearchOnRouteChange from "@/components/ClearSearchOnRouteChange";
 
 type HistoryChildProps = {
   searchValue: string;
@@ -58,7 +57,6 @@ export default function HistoryLayout({
           ) : null
         }
       />
-      <ClearSearchOnRouteChange />
       <div>
         {" "}
         {isValidElement(children)

@@ -1,202 +1,229 @@
-import { CFCODataRow } from "./models";
+import { DiffAndUploadLookupEntriesRequest } from "../common_models/diff_and_upload_req_body";
+import { validateFileNameAndGetInfo } from "../common_validations/validate_file_name";
+import { validateProductType } from "../common_validations/validate_product_type";
+import { validateVersionNameUniqueness } from "../common_validations/validate_version_name_uniqueness";
+import { validateAndGetDataFromCFCOExcelTab } from "../common_validations/validate_cfco_tab_excel";
+import { validateCFCOsColumns } from "../common_validations/validate_cfco_cols";
+import { validateEmptyCFCOs } from "../common_validations/validate_empty_cfcos";
+import { validateIdentifersCode } from "../common_validations/validate_identifiers_code";
+import { validateMissingCOForCF } from "../common_validations/validate_missing_co_for_cf";
+import { validateDuplicateIdentifiers } from "../common_validations/validate_duplicate_identifiers";
+import { validateDuplicateCFDescs } from "../common_validations/validate_duplicate_cf_desc";
+import { validateCOParentAbsence } from "../common_validations/validate_co_parent_absence";
+import { getLatestLookupVersion } from "../common_helpers/get_latest_lookup_version";
+import { LOOKUP_ENTRY_TYPES } from "@/constants/api/enums/lookup_entry_types";
 import { ExecuteListLookEntries } from "../list/list_lookup_entries";
 import { ListLookupEntriesRequestSchema } from "../list/models";
-import { ChangeType } from "@/constants/common/lookup_entries_upload";
-import {
-  extractCFCOData,
-  parseVersionAndProductType,
-  validateFileSize,
-  validateFileType,
-  validateProductTypePresent,
-  validateVersionUniqueness,
-} from "./validations";
-import {
-  ComparedRow,
-  ExcelRow,
-  FlattenedEntry,
-  ResponseData,
-} from "./interfaces";
-import { ExecuteListLookupVersions } from "../../lookup_versions/list/list_lookup_versions";
-import { ListLookupVersionsRequestSchema } from "../../lookup_versions/list/models";
-import {
-  lookup_version_payload,
-  productType_payload,
-} from "@/constants/common/payloads";
-import { ListProductTypesRequestSchema } from "../../product_types/list/models";
-import { ExecuteListProductTypes } from "../../product_types/list/list_product_types";
+import { CFCODataArraySchemaType } from "../common_models/cfco_file_entries_schema";
+import { lookupEntriesColNames } from "@/constants/api/constants/column_names";
+import { ChangeTypes } from "@/constants/common/enums/lookup_entries_upload";
+import { DiffEntry } from "@/constants/common/enums/diff_entry";
 
-// ---------------------- Main Logic ----------------------
+interface ListLookupEntriesResponse {
+  list: Array<{
+    availableIdentifiers: Array<{
+      identifier: string;
+      description: string;
+      [key: string]: unknown;
+    }>;
+    identifier: string;
+    description: string;
+    comment: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
 
-export async function processUploadedCFCOFile(
-  file: Blob,
-  lookupVersionId: string,
-  fileName: string,
-) {
-  if (!file || !(file instanceof Blob)) {
-    return {
-      error: true,
-      status: 400,
-      response: { message: "Invalid file" },
-    };
-  }
-  // validate file type
-  debugger;
-  validateFileType(fileName);
-  const VersionAndProductType = parseVersionAndProductType(fileName);
+export const executeDiffLookupEntries = async (
+  req: DiffAndUploadLookupEntriesRequest,
+): Promise<[object, number]> => {
+  //todo: optimize
+  const newCFCOs = await applyReqValidationsAndExtractCFCOs(req);
 
-  //   get all the versions from DB
-  const [versions] = await ExecuteListLookupVersions(
-    ListLookupVersionsRequestSchema.parse(lookup_version_payload),
+  const latestLookupVersionId = await getLatestLookupVersion(req.productTypeId);
+
+  const currLatestCFCOs = await getCurrLookupEntries(latestLookupVersionId);
+
+  const res = getGeneratedDiff(currLatestCFCOs, newCFCOs);
+
+  return [res, 200];
+};
+
+const applyReqValidationsAndExtractCFCOs = async (
+  req: DiffAndUploadLookupEntriesRequest,
+) => {
+  const [versionName, productTypeFileName] = validateFileNameAndGetInfo(
+    req.file.name,
   );
-  const versionList = (versions as { list: [] }).list;
-
-  validateVersionUniqueness(
-    VersionAndProductType.version,
-    VersionAndProductType.productType,
-    versionList,
+  const identifierCode = await validateProductType(
+    req.productTypeId,
+    productTypeFileName,
   );
+  await validateVersionNameUniqueness(versionName, req.productTypeId);
 
-  //   get all the productType form DB
+  //todo: convert it to class to avoid copying data for every call
+  const rawNewCFCOs = await validateAndGetDataFromCFCOExcelTab(req.file);
+  const newCFCOs = validateCFCOsColumns(rawNewCFCOs);
+  validateEmptyCFCOs(newCFCOs);
+  validateIdentifersCode(newCFCOs, identifierCode);
+  validateDuplicateIdentifiers(newCFCOs);
+  validateMissingCOForCF(newCFCOs);
+  validateDuplicateCFDescs(newCFCOs);
+  validateCOParentAbsence(newCFCOs);
 
-  const [productTypes] = await ExecuteListProductTypes(
-    ListProductTypesRequestSchema.parse(productType_payload),
-  );
-  const productTypesList = (productTypes as { list: [] }).list;
-  validateProductTypePresent(
-    VersionAndProductType.productType,
-    productTypesList as [],
-  );
+  return newCFCOs;
+};
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  validateFileSize(buffer);
-
+const getCurrLookupEntries = async (latestLookupVersionId: string) => {
   const payload = {
     filters: {
-      type: "CF",
-      productTypeId: lookupVersionId,
+      lookupVersionId: latestLookupVersionId,
+      type: LOOKUP_ENTRY_TYPES.CF,
     },
     includeFields: {
-      lookupVersions: ["id", "versionName"],
-      availableIdentifiers: ["id", "identifier", "description"],
-      lookupEntries: ["identifier", "description"],
+      lookupEntries: [
+        lookupEntriesColNames.identifier,
+        lookupEntriesColNames.description,
+      ],
+      availableIdentifiers: [
+        lookupEntriesColNames.identifier,
+        lookupEntriesColNames.description,
+      ],
     },
-    showMapping: true,
+    getLatestVersionData: false,
+    includeLookupVersionInfo: false,
     maxPageLimit: true,
-    getLatestVersionData: true,
   };
 
-  const [res] = await ExecuteListLookEntries(
+  const [res] = (await ExecuteListLookEntries(
     ListLookupEntriesRequestSchema.parse(payload),
-  );
+  )) as [ListLookupEntriesResponse, number];
 
-  let parsedData: CFCODataRow[];
-  try {
-    parsedData = extractCFCOData(buffer);
-  } catch (err) {
-    return {
-      error: true,
-      status: 400,
-      response: { message: (err as Error).message },
-    };
-  }
+  return res.list;
+};
 
-  const compareData = await compareDescriptions(
-    parsedData as ExcelRow[],
-    res as ResponseData,
-  );
+const getGeneratedDiff = (
+  unflattenedCurrCFCOs: ListLookupEntriesResponse["list"],
+  newCFCOs: CFCODataArraySchemaType,
+) => {
+  const currCFCOs = flattenData(unflattenedCurrCFCOs);
+  const diffs: DiffEntry[] = [];
+  const currMap = new Map(currCFCOs.map((c) => [c.Identifier, c]));
+  const newMap = new Map(newCFCOs.map((n) => [n.Identifier, n]));
 
-  return {
-    error: false,
-    status: 200,
-    response: {
-      data: compareData,
-    },
-  };
-}
-
-// ---------------------- Async Comparison Logic ----------------------
-
-async function compareDescriptions(
-  excelData: ExcelRow[],
-  responseData: ResponseData,
-): Promise<ComparedRow[]> {
-  const flattened: FlattenedEntry[] = await flatternData(responseData);
-
-  const result: ComparedRow[] = [];
-  const seenIdentifiers = new Set<string>();
-
-  for (const excelEntry of excelData) {
-    const match = flattened.find(
-      (item) =>
-        item.Identifier === excelEntry.Identifier &&
-        item.Type === excelEntry.Type,
-    );
-
-    seenIdentifiers.add(excelEntry.Identifier);
-
-    if (!match) {
-      // New entry in Excel, not found in DB
-      result.push({
-        "Change Type": ChangeType.ADDED,
-        ...excelEntry,
-        "Old Value": "",
-        "New Value": excelEntry.Description,
+  // 1) Handle ADDED, MODIFIED, UNCHANGED
+  for (const n of newCFCOs) {
+    const c = currMap.get(n.Identifier);
+    if (!c) {
+      // entirely new row
+      diffs.push({
+        changeType: ChangeTypes.ADDED,
+        type: n.Type,
+        identifier: n.Identifier,
+        description: n.Description,
+        comment: n.Comment,
+        parent: n.Parent,
       });
-      continue;
+    } else {
+      // existed before — compare the three fields
+      if (c.Type !== n.Type) {
+        diffs.push({
+          changeType: ChangeTypes.MODIFIED,
+          type: n.Type,
+          identifier: n.Identifier,
+          description: n.Description,
+          comment: n.Comment,
+          parent: n.Parent,
+          changedField: "type",
+          oldValue: c.Type,
+          newValue: n.Type,
+        });
+      } else if (c.Description !== n.Description) {
+        diffs.push({
+          changeType: ChangeTypes.MODIFIED,
+          type: n.Type,
+          identifier: n.Identifier,
+          description: n.Description,
+          parent: n.Parent,
+          comment: n.Comment,
+          changedField: "description",
+          oldValue: c.Description,
+          newValue: n.Description,
+        });
+      } else if (c.Parent !== n.Parent) {
+        diffs.push({
+          changeType: ChangeTypes.MODIFIED,
+          type: n.Type,
+          identifier: n.Identifier,
+          description: n.Description,
+          parent: n.Parent,
+          comment: n.Comment,
+          changedField: "parent",
+          oldValue: c.Parent,
+          newValue: n.Parent,
+        });
+      } else if (c.Comment !== n.Comment) {
+        diffs.push({
+          changeType: ChangeTypes.MODIFIED,
+          type: n.Type,
+          identifier: n.Identifier,
+          description: n.Description,
+          parent: n.Parent,
+          comment: n.Comment,
+          changedField: "comment",
+          oldValue: c.Comment,
+          newValue: n.Comment,
+        });
+      } else {
+        diffs.push({
+          changeType: ChangeTypes.UNCHANGED,
+          type: n.Type,
+          identifier: n.Identifier,
+          description: n.Description,
+          comment: n.Comment,
+          parent: n.Parent,
+        });
+      }
     }
-
-    const isChanged =
-      match.Description.trim() !== excelEntry.Description.trim();
-
-    result.push({
-      "Change Type": isChanged ? ChangeType.MODIFIED : ChangeType.UNCHANGED,
-      ...excelEntry,
-      "Old Value": match.Description,
-      "New Value": isChanged ? excelEntry.Description : "--",
-    });
   }
 
-  // Find deleted items (present in DB but not in Excel)
-  for (const dbEntry of flattened) {
-    if (!seenIdentifiers.has(dbEntry.Identifier)) {
-      result.push({
-        "Change Type": ChangeType.REMOVED,
-        Type: dbEntry.Type,
-        Identifier: dbEntry.Identifier,
-        Description: "",
-        Parent: "",
-        "Comment 1": "",
-        "Comment 2": "",
-        "Old Value": dbEntry.Description,
-        "New Value": "",
+  // 2) Handle REMOVED
+  for (const c of currCFCOs) {
+    if (!newMap.has(c.Identifier)) {
+      diffs.push({
+        changeType: ChangeTypes.REMOVED,
+        type: c.Type,
+        identifier: c.Identifier,
+        description: c.Description,
+        parent: c.Parent,
       });
     }
   }
 
-  return result;
-}
+  return diffs;
+};
 
-const flatternData = async (responseData: ResponseData) => {
-  const flattened: FlattenedEntry[] = [];
-  for (const group of responseData.list) {
-    // Add CF
+const flattenData = (currCfcos: ListLookupEntriesResponse["list"]) => {
+  const flattened: CFCODataArraySchemaType = [];
+  for (const group of currCfcos) {
     flattened.push({
-      Type: "CF",
+      Type: LOOKUP_ENTRY_TYPES.CF,
       Identifier: group.identifier,
-      Description: group.description || "",
-      versionName: group.lookupVersionDetails?.versionName || "",
+      Description: group.description,
+      Parent: LOOKUP_ENTRY_TYPES.CF,
+      Comment: group.comment || "",
     });
 
-    // Add COs
     for (const co of group.availableIdentifiers || []) {
       flattened.push({
-        Type: "CO",
+        Type: LOOKUP_ENTRY_TYPES.CO,
         Identifier: co.identifier,
-        Description: co.description || "",
-        versionName: group.lookupVersionDetails?.versionName || "",
+        Description: co.description,
+        Parent: group.identifier,
+        Comment: "",
       });
     }
   }
+
   return flattened;
 };

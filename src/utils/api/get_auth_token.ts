@@ -1,5 +1,5 @@
-import { getItemFromCache, setItemInCache } from "@/app/lib/in_mem_cache";
-import { tactonApiRequest } from "@/app/lib/tacton_client";
+import { getItemFromCache, setItemInCache } from "@/app/lib/api/in_mem_cache";
+import { tactonApiRequest } from "@/app/lib/api/tacton_client";
 import { TACTON_TOKEN } from "@/constants/api/constants/tacton_access_token";
 import { REQUEST_METHODS } from "@/constants/common/enums/request_methods";
 

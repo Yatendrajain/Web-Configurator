@@ -53,6 +53,17 @@ const EditProductOrderPage = () => {
     alert("Product order saved successfully!");
   };
 
+  const handleOrderFieldChange = (cfKey: string, newValue: string) => {
+    console.log(cfKey, newValue);
+    // setOrderFields((prev) => {
+    //   if (prev) {
+    //     return prev.map((field) =>
+    //       field.key === cfKey ? { ...field, value: newValue } : field,
+    //     );
+    //   }
+    // });
+  };
+
   if (loading) return <CircularProgress />;
 
   return (
@@ -122,6 +133,7 @@ const EditProductOrderPage = () => {
             onChange={handleFieldChange}
             onPaxChange={handlePaxChange}
             mode="edit"
+            handleOrderFieldChange={handleOrderFieldChange}
           />
         </Box>
       </PageContentWrapper>

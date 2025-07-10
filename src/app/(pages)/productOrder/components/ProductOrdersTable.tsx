@@ -1,23 +1,24 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import DynamicTable from "@/components/DynamicTable/DynamicTable";
-import {
-  ProductOrderData,
-  ProductOrdersTableProps,
-  ReqBody,
-} from "../interface";
-import { useAppSelector } from "@/app/hooks/reduxHooks";
-import { formatDateMMDDYYYY } from "@/utils/formatters";
-import ProductOrderActionButtons from "./ProductOrderActionButtons";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { useAppSelector } from "@/app/hooks/reduxHooks";
 
-export default function ProductOrdersTable({
-  search,
-}: ProductOrdersTableProps) {
-  const { productTypeCode, productTypeName } = useAppSelector(
+import DynamicTable from "@/components/DynamicTable/DynamicTable";
+import ProductOrderActionButtons from "./ProductOrderActionButtons";
+
+import { formatDateMMDDYYYY } from "@/utils/formatters";
+import { ProductOrderData, ReqBody } from "../interface";
+import { selectSearchQuery } from "@/app/store/searchSlice";
+
+export default function ProductOrdersTable() {
+  const router = useRouter();
+  const searchQuery = useSelector(selectSearchQuery);
+  const { productTypeCode, productTypeName, productTypeId } = useAppSelector(
     (state) => state.productType,
   );
+
   const [data, setData] = useState<ProductOrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<string>("itemNumber");
@@ -25,11 +26,17 @@ export default function ProductOrdersTable({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const router = useRouter();
 
   const fetchData = useCallback(
     async (pageToFetch: number, reset = false) => {
       setLoadingMore(true);
+      if (!productTypeCode) {
+        setData([]);
+        setHasMore(false);
+        // setLoading(false);
+        return;
+      }
+
       try {
         const reqBody: ReqBody = {
           filters: {
@@ -54,23 +61,28 @@ export default function ProductOrdersTable({
           orderBy: sortOrder,
           sortBy: sortBy,
           maxPageLimit: false,
-          pageLimit: 15,
+          pageLimit: 10,
           page: pageToFetch,
         };
-        if (search) {
+
+        if (searchQuery) {
           reqBody.filters = {
-            itemNumber: search,
+            itemNumber: searchQuery,
             ...reqBody.filters,
           };
         }
+
         const encodedData = encodeURIComponent(JSON.stringify(reqBody));
         const response = await fetch(
           `/api/orders_data/list?data=${encodedData}`,
         );
+
         if (!response.ok) throw new Error("Failed to fetch product orders");
+
         const json = await response.json();
         const list = json?.list || [];
-        // @ts-expect-error: API response is not guaranteed to match ProductOrderData
+
+        // @ts-expect-error: API response is not guaranteed to match
         const transformedData: ProductOrderData[] = list.map((item) => ({
           id: item.id,
           itemNumber: item.attributes?.itemNumber || "",
@@ -81,27 +93,30 @@ export default function ProductOrdersTable({
           productFamilyFromOriginProduct:
             item.attributes?.productFamilyFromOriginProduct || "",
         }));
+
         if (reset) {
           setData(transformedData);
         } else {
           setData((prev) => [...prev, ...transformedData]);
         }
+
         setHasMore(transformedData.length > 0);
-      } catch {
+      } catch (error) {
+        console.error("Error fetching product orders:", error);
         setHasMore(false);
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [sortOrder, sortBy, productTypeCode, search],
+    [sortOrder, sortBy, productTypeCode, searchQuery],
   );
 
   useEffect(() => {
-    setLoading(true);
     setPage(1);
+    setLoading(true);
     fetchData(1, true);
-  }, [search, productTypeCode, sortBy, sortOrder, fetchData]);
+  }, [searchQuery, productTypeCode, sortBy, sortOrder, fetchData]);
 
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
@@ -111,9 +126,14 @@ export default function ProductOrdersTable({
     }
   }, [page, loadingMore, hasMore, fetchData]);
 
-  const handleEdit = () => {
-    router.push("productOrder/edit");
-  };
+  const handleEdit = useCallback(
+    (row: ProductOrderData) => {
+      router.push(
+        `/productOrder/edit/${productTypeId}/${row.itemNumber}/${row.version}`,
+      );
+    },
+    [productTypeId, router],
+  );
 
   const handleSortChange = (columnId: string) => {
     if (sortBy === columnId) {
@@ -161,7 +181,7 @@ export default function ProductOrdersTable({
         label: "Actions",
         align: "center",
         render: (_: unknown, row: ProductOrderData) => (
-          <ProductOrderActionButtons orderId={row.id} onEdit={handleEdit} />
+          <ProductOrderActionButtons order={row} onEdit={handleEdit} />
         ),
       },
     ],

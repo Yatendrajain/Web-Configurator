@@ -22,14 +22,23 @@ import {
   tablePaperStyle,
   tableContainerStyle,
 } from "./DynamicTable/table.styles";
+import { useSelector } from "react-redux";
+import { selectCFCOSearchQuery } from "@/app/store/cfcoSearchSlice";
 
-const headCells: HeadCell[] = [
-  { id: "type", label: "Type" },
-  { id: "id", label: "Identifier" },
-  { id: "description", label: "Description" },
-  { id: "parent", label: "Parent" },
-  { id: "comment", label: "Comment" },
+interface HeadCellWithWidth extends HeadCell {
+  width?: string | number;
+}
+
+const headCells: HeadCellWithWidth[] = [
+  // { id: "type", label: "Type", width: "10%" },
+  { id: "id", label: "Identifier", width: "15%" },
+  { id: "description", label: "Description", width: "40%" },
+  { id: "parent", label: "Parent", width: "10%" },
+  { id: "comment", label: "Comment", width: "35%" },
 ];
+
+// Expand button column width
+const EXPAND_COLUMN_WIDTH = "60px";
 
 interface CFCOExpandableTableProps {
   data: CFData[];
@@ -45,6 +54,7 @@ const CFCOExpandableTable: React.FC<CFCOExpandableTableProps> = ({
   const [orderBy, setOrderBy] = useState<keyof CFData>("id");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [allExpanded, setAllExpanded] = useState(false);
+  const searchQuery = useSelector(selectCFCOSearchQuery);
 
   const handleSort = (property: keyof CFData) => {
     setOrder((prev) =>
@@ -53,9 +63,22 @@ const CFCOExpandableTable: React.FC<CFCOExpandableTableProps> = ({
     setOrderBy(property);
   };
 
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return data;
+
+    const lower = searchQuery.toLowerCase();
+    return data.filter((item) =>
+      `${item.id} ${item.description} ${item.parent} ${item.comment}`
+        .toLowerCase()
+        .includes(lower),
+    );
+  }, [data, searchQuery]);
+
+  console.log(filteredData);
+
   const sortedData = useMemo(
-    () => sortBy(data, orderBy, order),
-    [data, orderBy, order],
+    () => sortBy(filteredData, orderBy, order),
+    [filteredData, orderBy, order],
   );
 
   return (
@@ -74,7 +97,15 @@ const CFCOExpandableTable: React.FC<CFCOExpandableTableProps> = ({
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ ...tableHeaderStyle, fontWeight: "bold" }}>
+              <TableCell
+                sx={{
+                  ...tableHeaderStyle,
+                  fontWeight: "bold",
+                  width: EXPAND_COLUMN_WIDTH,
+                  minWidth: EXPAND_COLUMN_WIDTH,
+                  maxWidth: EXPAND_COLUMN_WIDTH,
+                }}
+              >
                 <IconButton
                   size="small"
                   sx={{ color: "#0a0908" }}
@@ -86,7 +117,13 @@ const CFCOExpandableTable: React.FC<CFCOExpandableTableProps> = ({
               {headCells.map((headCell) => (
                 <TableCell
                   key={headCell.id}
-                  sx={{ ...tableHeaderStyle, fontWeight: "bold" }}
+                  sx={{
+                    ...tableHeaderStyle,
+                    fontWeight: "bold",
+                    width: headCell.width,
+                    minWidth: headCell.width,
+                    maxWidth: headCell.width,
+                  }}
                 >
                   <TableSortLabel
                     active={orderBy === headCell.id}
@@ -123,7 +160,7 @@ const CFCOExpandableTable: React.FC<CFCOExpandableTableProps> = ({
                   {error}
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 && !loading ? (
+            ) : sortedData.length === 0 && !loading ? (
               <TableRow>
                 <TableCell colSpan={headCells.length + 1} align="center">
                   No data found

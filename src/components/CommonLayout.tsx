@@ -1,5 +1,5 @@
 import React from "react";
-import TopNavbar from "@/components/navbars/TopNavbar";
+// import TopNavbar from "@/components/navbars/TopNavbar";
 
 export default function CommonLayout({
   children,
@@ -8,7 +8,7 @@ export default function CommonLayout({
 }) {
   return (
     <>
-      <TopNavbar />
+      {/* <TopNavbar /> */}
       <main className="common-layout-main">{children}</main>
     </>
   );

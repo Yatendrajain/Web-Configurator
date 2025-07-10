@@ -1,25 +1,16 @@
-// components/HistoryActionButtons.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Box, Tooltip } from "@mui/material";
 import Icon from "@/components/IconConfig";
 import styles from "@/app/(pages)/history/history.module.scss";
-import { ActionProps } from "../types/interface";
+import { HistoryData } from "../types/interface";
 
-const HistoryActionButtons: React.FC<ActionProps> = ({ orderIdVersion }) => {
-  const router = useRouter();
+interface Props {
+  order: HistoryData;
+  onEdit: (order: HistoryData, type: string) => void;
+}
 
-  const handleView = () => {
-    const orderId = orderIdVersion.split(" ");
-    router.push(`/history/${orderId[0]}/view`);
-  };
-
-  const handleClone = () => {
-    const orderId = orderIdVersion.split(" ");
-    router.push(`/history/${orderId[0]}/clone`);
-  };
-
+const HistoryActionButtons: React.FC<Props> = ({ order, onEdit }) => {
   return (
     <Box className={styles.historyButtons}>
       <Tooltip title="Clone" arrow placement="left">
@@ -28,7 +19,7 @@ const HistoryActionButtons: React.FC<ActionProps> = ({ orderIdVersion }) => {
             name="clone"
             size={16}
             style={{ cursor: "pointer" }}
-            onClick={handleClone}
+            onClick={() => onEdit(order, "clone")}
           />
         </span>
       </Tooltip>
@@ -38,7 +29,7 @@ const HistoryActionButtons: React.FC<ActionProps> = ({ orderIdVersion }) => {
             name="view"
             size={16}
             style={{ cursor: "pointer" }}
-            onClick={handleView}
+            onClick={() => onEdit(order, "view")}
           />
         </span>
       </Tooltip>

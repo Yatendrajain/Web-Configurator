@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 
-const runMigrations = async () => {
+export const runMigrations = async () => {
   const connectionString = process.env.DATABASE_URL;
   console.log("🚨 Running migrations!");
   console.log("⏳ Waiting 3 seconds before proceeding...");
@@ -49,8 +49,8 @@ const runMigrations = async () => {
   }
 };
 
-runMigrations().catch((err) => {
-  console.error("❌ Migration script failed");
-  console.error("Error: ", err);
-  process.exit(1);
-});
+// runMigrations().catch((err) => {
+//   console.error("❌ Migration script failed");
+//   console.error("Error: ", err);
+//   process.exit(1);
+// });

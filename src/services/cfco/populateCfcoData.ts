@@ -4,7 +4,7 @@ const safe = (val: unknown) =>
   val === undefined || val === null || val === "" ? "--" : val;
 
 function extractComment(obj: Record<string, unknown>): string {
-  const commentKeys = ["comment1", "comment_1", "comment2", "comment_2"];
+  const commentKeys = ["comment", "comment"];
   for (const key of commentKeys) {
     const value = safe(obj[key]);
     if (value !== "--") {

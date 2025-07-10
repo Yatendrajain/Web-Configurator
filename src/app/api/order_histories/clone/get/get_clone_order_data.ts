@@ -9,11 +9,11 @@ import { GetCloneOrderDataRequest } from "./models";
 import { giveDiffArr } from "@/utils/api/diff_arr";
 import { ExecuteListOrderHistories } from "@/app/api/order_histories/list/list_order_histories";
 import { ListOrderHistoriesRequestSchema } from "@/app/api/order_histories/list/models";
-import { FIRST_SUBM_VERSION } from "@/constants/api/constants/submission_versions";
 import { LOOKUP_ENTRY_TYPES } from "@/constants/api/enums/lookup_entry_types";
 import { ORDER_BY } from "@/constants/api/enums/orderBy";
 import { ExecuteListLookEntries } from "@/app/api/lookup_entries/list/list_lookup_entries";
 import { ListLookupEntriesRequestSchema } from "@/app/api/lookup_entries/list/models";
+import { CustomAPIError } from "@/utils/api/custom_error";
 import { getCFCOMappings, MappingItem } from "@/utils/common/get_cfco_mappings";
 
 interface TactonItem {
@@ -31,7 +31,7 @@ interface OrderHistoryItem {
   lookupVersionId: string;
   encodedOrderData: TactonItem;
   submissionVersion: string;
-  changedOrderData: {
+  encodedChangedOrderData: {
     mappedSection: Record<string, string>;
     unmappedSection: Record<string, string>;
   };
@@ -54,35 +54,56 @@ interface ListLookupEntriesResponse {
 export const ExecuteGetCloneOrderData = async (
   req: GetCloneOrderDataRequest,
 ): Promise<[object, number]> => {
-  const orderHistory = await getOrderHistory(req.orderHistoryId);
+  const orderHistory = await getOrderHistory(
+    req.orderHistoryId,
+    req.includeDecodedData,
+    req.includeEncodedData,
+  );
 
-  let encodedOrderData = orderHistory.encodedOrderData;
+  let mappings: Array<MappingItem> = [];
+  let dictionary: Record<string, string> = {};
+  let optionsMap: Record<string, string[]> = {};
+  if (req.includeMappingAndDictionary) {
+    mappings = await getRespectiveCFCOs(
+      orderHistory,
+      orderHistory.encodedOrderData,
+    );
 
-  if (orderHistory.submissionVersion != FIRST_SUBM_VERSION)
-    encodedOrderData = await getFirstSubmission(orderHistory.itemNumber);
-
-  const mappings = await getRespectiveCFCOs(orderHistory, encodedOrderData);
-  const [dictionary, optionsMap] = getCFCOMappings(mappings);
+    [dictionary, optionsMap] = getCFCOMappings(mappings);
+  }
 
   return [
     {
       metadata: getOrderMetadata(orderHistory),
-      originalData: encodedOrderData,
       orderHistory,
-      dictionary,
-      optionsMap,
+      ...(req.includeMappingAndDictionary ? { dictionary, optionsMap } : {}),
     },
     200,
   ];
 };
 
-const getOrderHistory = async (orderHistoryId: string) => {
+const getOrderHistory = async (
+  orderHistoryId: string,
+  includeDecodedData: boolean,
+  includeEncodedData: boolean,
+) => {
+  const notInclude = [];
+  if (!includeDecodedData) {
+    notInclude.push(OHCN.decodedOrderData);
+    notInclude.push(OHCN.decodedChangedOrderData);
+  }
+
+  if (!includeEncodedData) {
+    notInclude.push(OHCN.encodedOrderData);
+    notInclude.push(OHCN.encodedChangedOrderData);
+  }
+
   const payload = {
     filters: {
       id: orderHistoryId,
     },
     includeFields: {
-      orderHistories: giveDiffArr(Object.keys(OHCN), [OHCN.decodedOrderData]),
+      orderHistories: giveDiffArr(Object.keys(OHCN), notInclude),
       users: [usersColNames.id, usersColNames.name],
       productTypes: [
         productTypesColNames.id,
@@ -105,44 +126,42 @@ const getOrderHistory = async (orderHistoryId: string) => {
     ListOrderHistoriesRequestSchema.parse(payload),
   )) as [ListOrderHistoriesResponse, number];
 
-  if (res.list.length === 0) throw new Error("Invalid Order History!");
+  if (res.list.length === 0)
+    throw new CustomAPIError({
+      clientMessage: "Order history not found!",
+      innerError: "Order history not found!",
+      statusCode: 404,
+    });
 
   return res.list[0];
-};
-
-const getFirstSubmission = async (itemNumber: string) => {
-  const payload = {
-    filters: {
-      itemNumber: itemNumber,
-      submissionVersion: FIRST_SUBM_VERSION,
-    },
-    includeFields: {
-      orderHistories: [OHCN.encodedOrderData],
-    },
-    includeLookupVersionDetails: false,
-    includeUserDetails: false,
-    includeProductTypeDetails: false,
-    pageLimit: 1,
-    page: 1,
-  };
-
-  const [res] = (await ExecuteListOrderHistories(
-    ListOrderHistoriesRequestSchema.parse(payload),
-  )) as [ListOrderHistoriesResponse, number];
-
-  if (res.list.length === 0) throw new Error("Invalid First Order History!");
-
-  return res.list[0].encodedOrderData;
 };
 
 const getRespectiveCFCOs = async (
   orderHistory: OrderHistoryItem,
   encodedOrderData: TactonItem,
 ) => {
+  let encodedOrderDataObject: Record<string, string> = {};
+  if (encodedOrderData?.attributes?.configurationString)
+    encodedOrderDataObject = JSON.parse(
+      encodedOrderData.attributes.configurationString,
+    );
+  else {
+    if (encodedOrderData?.mappedSection)
+      encodedOrderDataObject = {
+        ...encodedOrderData.mappedSection,
+        ...encodedOrderDataObject,
+      };
+    if (encodedOrderData?.unmappedSection)
+      encodedOrderDataObject = {
+        ...encodedOrderData.unmappedSection,
+        ...encodedOrderDataObject,
+      };
+  }
+
   const identifiers = [
-    ...Object.keys(JSON.parse(encodedOrderData.attributes.configurationString)),
-    ...Object.keys(orderHistory.changedOrderData.mappedSection || {}),
-    ...Object.keys(orderHistory.changedOrderData.unmappedSection || {}),
+    ...Object.keys(encodedOrderDataObject),
+    ...Object.keys(orderHistory.encodedChangedOrderData.mappedSection || {}),
+    ...Object.keys(orderHistory.encodedChangedOrderData.unmappedSection || {}),
   ];
 
   const uniqueIdentifiers = Array.from(
@@ -188,7 +207,8 @@ const getOrderMetadata = (orderHistory: OrderHistoryItem) => {
       itemNumber: orderHistory.itemNumber,
       version: orderHistory.itemNumberVersion,
       submissionVersion: orderHistory.submissionVersion,
-      finalizedDate: orderHistory.encodedOrderData.attributes.finalizedDate,
+      finalizedDate:
+        orderHistory.encodedOrderData?.attributes?.finalizedDate || "NA",
       submittedAt: orderHistory.createdAt,
     },
   };

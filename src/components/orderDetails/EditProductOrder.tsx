@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { Box, Typography, TextField, Divider, Checkbox } from "@mui/material";
+import { Box, Typography, Divider, Checkbox } from "@mui/material";
 import CustomDropdown from "../customDropdown";
 import SystemFields from "./SystemFields";
 import { Props } from "@/interfaces/editProduct";
@@ -13,6 +12,8 @@ const EditProductOrder: React.FC<Props> = ({
   onChange,
   onPaxChange,
   mode,
+  onValidityChange,
+  handleOrderFieldChange,
 }) => {
   return (
     <Box sx={{ backgroundColor: "white", borderRadius: 2, padding: 2 }}>
@@ -91,6 +92,10 @@ const EditProductOrder: React.FC<Props> = ({
                     width={280}
                     defaultOption={field.value}
                     allOptions={field.options}
+                    disabled={field.disabled}
+                    onChange={(newValue: string) =>
+                      handleOrderFieldChange(field.key!, newValue)
+                    }
                   />
                 ) : (
                   <Typography
@@ -119,85 +124,14 @@ const EditProductOrder: React.FC<Props> = ({
             <Divider sx={{ mb: 2, mt: -2 }} />
 
             <SystemFields
-              mode="edit"
               systemFields={systemFields}
+              paxVersion={paxVersion}
               onChange={onChange}
+              onValidityChange={onValidityChange}
+              mode={mode}
+              onPaxChange={onPaxChange}
             />
           </>
-        )}
-
-        {/* PAX Version Fields */}
-        {mode === "edit" && (
-          <Box
-            display="flex"
-            justifyContent={"space-between"}
-            gap={2}
-            flexWrap="wrap"
-            alignItems={"center"}
-          >
-            <Typography flexBasis="33.33%" variant="subtitle2" gutterBottom>
-              PAx Version
-            </Typography>
-            <Box
-              display="flex"
-              justifyContent={"space-between"}
-              flexBasis="64.33%"
-              gap={2}
-              flexWrap="wrap"
-              alignItems={"center"}
-            >
-              <Box display={"flex"} flexBasis="43%" gap={2}>
-                <Typography
-                  display={"flex"}
-                  alignItems={"center"}
-                  variant="subtitle2"
-                  gutterBottom
-                >
-                  Major
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={paxVersion.major}
-                  sx={{
-                    "& .MuiInputBase-input": {
-                      fontSize: "12px",
-                      backgroundColor: "#F9FAFB",
-                    },
-                  }}
-                  onChange={(e) => onPaxChange("major", e.target.value)}
-                />
-              </Box>
-
-              <Box
-                display={"flex"}
-                flexBasis="43%"
-                gap={2}
-                alignItems={"center"}
-              >
-                <Typography
-                  display={"flex"}
-                  alignItems={"center"}
-                  variant="subtitle2"
-                  gutterBottom
-                >
-                  Minor
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={paxVersion.minor}
-                  sx={{
-                    "& .MuiInputBase-input": {
-                      fontSize: "12px",
-                      backgroundColor: "#F9FAFB",
-                    },
-                  }}
-                  onChange={(e) => onPaxChange("minor", e.target.value)}
-                />
-              </Box>
-            </Box>
-          </Box>
         )}
       </Box>
     </Box>

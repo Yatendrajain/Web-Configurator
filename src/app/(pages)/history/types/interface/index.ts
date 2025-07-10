@@ -18,6 +18,9 @@ export interface HistoryData extends RowData {
   orderName?: string;
   productNo?: number;
   unitId?: number;
+  name?: string;
+  id: string;
+  lastSubmitted?: string;
   // systemFields?: SystemFields;
   userDetails: {
     name: string;
@@ -72,9 +75,73 @@ export interface ViewProps {
   params: Promise<ViewParams>;
 }
 
-// export interface SystemFields {
-//   alarmServerArea: string;
-//   unitId: string;
-//   dataServerArea: string;
-//   processArea: string;
-// }
+export interface HistoryDetails {
+  metadata: {
+    lookupVersionDetails: {
+      versionName: string;
+    };
+    productTypeDetails: {
+      name: string;
+      productTypeCode: string;
+    };
+    orderDetails: {
+      itemNumber: string;
+      version: string;
+      submissionVersion: string;
+      finalizedDate: string;
+      submittedAt: string;
+    };
+    orderHistory: {
+      id: string;
+      submissionVersion: string;
+      itemNumber: string;
+      itemNumberVersion: string;
+      orderName: string;
+      clonedFromVersion: string | null;
+      productTypeId: string;
+      lookupVersionId: string;
+      paxMajor: string;
+      paxMinor: string;
+      pipelineStatus: string;
+      pipelineStatusUrl: string;
+      productNo: number;
+      unitId: number;
+      dataServerArea: string;
+      alarmServerArea: string;
+      processArea: string;
+      decodedOrderData: Record<string, string>;
+      decodedChangedOrderData: Record<string, string>;
+      remarks: string | null;
+      createdByUserId: string;
+      createdAt: string;
+      productTypeDetails: {
+        id: string;
+        name: string;
+        productTypeCode: string;
+      };
+      userDetails: {
+        id: string;
+        name: string;
+      };
+      lookupVersionDetails: {
+        id: string;
+        versionName: string;
+      };
+    };
+  };
+}
+
+export interface HistoryViewOrderFields {
+  label: string;
+  key: string;
+  original: string;
+  submitted: string;
+}
+
+export interface SystemFieldData {
+  productNo: number;
+  unitId: number;
+  dataServerArea: string;
+  alarmServerArea: string;
+  processArea: string;
+}

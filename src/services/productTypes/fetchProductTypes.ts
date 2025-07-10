@@ -1,5 +1,3 @@
-// src/services/productTypes/fetchProductTypes.ts
-
 import { ApiProductType, Option } from "@/interfaces/productType";
 
 export const fetchProductTypes = async (
@@ -22,9 +20,7 @@ export const fetchProductTypes = async (
   const encoded = encodeURIComponent(JSON.stringify(requestBody));
   const res = await fetch(`/api/product_types/list?data=${encoded}`);
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch product types");
-  }
+  if (!res.ok) throw new Error("Failed to fetch product types");
 
   const responseData = await res.json();
   const productTypes: ApiProductType[] = responseData?.list || [];

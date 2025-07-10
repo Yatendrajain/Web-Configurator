@@ -10,4 +10,5 @@ export interface CustomDropdownProps {
   originProduct?: string;
   width?: number | string;
   productTypeCode?: string;
+  disabled?: boolean;
 }

@@ -57,7 +57,7 @@ export const ListLookupEntriesRequestSchema = z
       ctx.addIssue({
         path: ["filters", "productTypeId"],
         code: z.ZodIssueCode.custom,
-        message: "productTypeId is required when getLatestVersion is true",
+        message: "productTypeId is required when getLatestVersionData is true",
       });
     }
   });

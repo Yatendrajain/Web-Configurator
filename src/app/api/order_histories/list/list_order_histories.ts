@@ -274,7 +274,6 @@ const applyIndirectFilters = (
     const filters = or(
       ilike(orderHistories.itemNumber, searchString),
       ilike(users.name, searchString),
-      ilike(productTypes.name, searchString),
       ilike(orderHistories.orderName, searchString),
     );
 

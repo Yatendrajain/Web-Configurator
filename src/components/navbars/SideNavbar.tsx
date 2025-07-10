@@ -21,12 +21,12 @@ const navItems = [
     href: "/history",
     icon: <Icon name="history" size={20} />,
   },
-  {
-    label: "Role Mapping",
-    href: "/role-mapping",
-    icon: <Icon name="userSettings" size={20} />,
-    disabled: false,
-  },
+  // {
+  //   label: "Role Mapping",
+  //   href: "/role-mapping",
+  //   icon: <Icon name="userSettings" size={20} />,
+  //   disabled: false,
+  // },
   {
     label: "Help",
     href: "/docs/coming_soon.pdf",

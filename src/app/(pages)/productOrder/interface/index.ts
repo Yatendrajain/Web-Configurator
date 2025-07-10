@@ -26,3 +26,25 @@ export interface ReqBody {
   pageLimit: number;
   page: number;
 }
+export interface ItemData {
+  itemNumber: string;
+  itemNumberVersion: string;
+  lookupVersionId: string;
+  productTypeId: string;
+  systemFields?: SystemFields;
+  changedOrderData?: {
+    mappedSection: Record<string, string>[];
+    unmappedSection: Record<string, string>[];
+  };
+}
+
+export interface SystemFields {
+  productNo: string;
+  unitId: number;
+  dataServerArea: string;
+  alarmServerArea: string;
+  processArea: string;
+  paxMajor: number;
+  paxMinor: number;
+}
+export type AlertType = "success" | "error" | "info" | "warning";

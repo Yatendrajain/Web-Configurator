@@ -23,12 +23,9 @@ import {
 import {
   lookupEntriesColNames,
   lookupVersionsColNames,
-  productTypesColNames,
 } from "@/constants/api/constants/column_names";
 import { MULTIPLE_IDENTIFIERS } from "@/constants/api/constants/indirect_filters_names";
-import { ORDER_BY } from "@/constants/api/enums/orderBy";
-import { ExecuteListLookupVersions } from "../../lookup_versions/list/list_lookup_versions";
-import { ListLookupVersionsRequestSchema } from "../../lookup_versions/list/models";
+import { getLatestLookupVersion } from "../common_helpers/get_latest_lookup_version";
 
 const DIRECT_FILTERS = [
   lookupEntriesColNames.id,
@@ -60,15 +57,6 @@ type LookupEntriesSelection = SelectedFieldsFor<
   lookupVersionDetails?: SelectedFieldsFor<typeof lookupVersionsColumnns>;
 };
 
-interface LookupVersionResponse {
-  list: Array<{
-    id: string;
-    versionName: string;
-    [key: string]: unknown;
-  }>;
-  [key: string]: unknown;
-}
-
 export const ExecuteListLookEntries = async (
   req: ListLookupEntriesRequest,
 ): Promise<[object, number]> => {
@@ -92,35 +80,6 @@ export const ExecuteListLookEntries = async (
   const paginationData = await getPaginationData(req);
 
   return [{ ...result, ...paginationData }, 200];
-};
-
-const getLatestLookupVersion = async (productTypeId: string) => {
-  const payload = {
-    filters: {
-      productTypeId: productTypeId,
-    },
-    includeFields: {
-      lookupVersions: [
-        lookupVersionsColNames.id,
-        lookupVersionsColNames.versionName,
-      ],
-      productTypes: [productTypesColNames.id],
-    },
-    orderBy: ORDER_BY.DESC,
-    sortBy: lookupVersionsColNames.createdAt,
-    includeProductTypeDetails: true,
-    includeUserDetails: false,
-    page: 1,
-    pageLimit: 1,
-  };
-
-  const [res] = (await ExecuteListLookupVersions(
-    ListLookupVersionsRequestSchema.parse(payload),
-  )) as [LookupVersionResponse, number];
-
-  if (res.list.length === 0) throw new Error("Invalid Product Type!");
-
-  return res.list[0].id;
 };
 
 const getQuery = (req: ListLookupEntriesRequest) => {

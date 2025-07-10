@@ -19,6 +19,7 @@ import { LOOKUP_ENTRY_TYPES } from "@/constants/api/enums/lookup_entry_types";
 import { ExecuteListLookEntries } from "@/app/api/lookup_entries/list/list_lookup_entries";
 import { ListLookupEntriesRequestSchema } from "@/app/api/lookup_entries/list/models";
 import { BASE_SUBM_VERSION } from "@/constants/api/constants/submission_versions";
+import { CustomAPIError } from "@/utils/api/custom_error";
 import { getCFCOMappings, MappingItem } from "@/utils/common/get_cfco_mappings";
 
 interface ListProductTypesResponse {
@@ -125,7 +126,12 @@ const getProductTypeCode = async (productTypeId: string) => {
     ListProductTypesRequestSchema.parse(payload),
   )) as [ListProductTypesResponse, number];
 
-  if (res.list.length === 0) throw new Error("Invalid Product Type!");
+  if (res.list.length === 0)
+    throw new CustomAPIError({
+      clientMessage: "Invalid Product Type!",
+      statusCode: 400,
+      innerError: "Invalid Product Type!",
+    });
 
   return res.list[0].productTypeCode;
 };
@@ -162,7 +168,11 @@ const getAvailableMetadata = async (
   )) as [ListLookupVersionsResponse, number];
 
   if (data.totalCount === 0 || data.list.length === 0)
-    throw new Error("No Valid Lookup Version available!");
+    throw new CustomAPIError({
+      clientMessage: "Master Data version is invalid!",
+      statusCode: 404,
+      innerError: "Lookup Version not found!",
+    });
 
   const { productTypeDetails, ...rest } = data.list[0];
 
@@ -200,7 +210,12 @@ const getDataFromTacton = async (req: GetEditPageOrderDataRequest) => {
     ListOrdersDataRequestSchema.parse(payload),
   )) as [ListOrdersDataResponse, number];
 
-  if (res.list.length === 0) throw new Error("No Valid Order Data available!");
+  if (res.list.length === 0)
+    throw new CustomAPIError({
+      clientMessage: "Order data not found!",
+      innerError: "Order data not found!",
+      statusCode: 404,
+    });
 
   return res.list[0];
 };

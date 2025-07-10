@@ -1,10 +1,11 @@
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import Avatar from "@mui/material/Avatar";
+// import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import { KeyboardArrowDown } from "@mui/icons-material";
+// import { KeyboardArrowDown } from "@mui/icons-material";
 import Icon from "@/components/IconConfig";
 import styles from "@/components/navbars/navbars.module.scss";
+import UserAvatarDropdown from "./UserAvatarDropdown";
 
 export default function TopNavbar() {
   return (
@@ -17,8 +18,7 @@ export default function TopNavbar() {
             </Box>
 
             <Box className={styles.topNavFlexCenter}>
-              <Avatar className={styles.topNavAvatar}>N</Avatar>
-              <KeyboardArrowDown sx={{ fontSize: 20 }} />
+              <UserAvatarDropdown onLogout={() => console.log("Logged out")} />
             </Box>
           </Box>
         </Toolbar>

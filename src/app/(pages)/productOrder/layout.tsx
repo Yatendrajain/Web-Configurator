@@ -10,7 +10,6 @@ import { usePathname } from "next/navigation";
 import styles from "@/app/(pages)/productOrder/productOrder.module.scss";
 import { useDispatch } from "react-redux";
 import { setSearchQuery } from "@/app/store/searchSlice";
-import ClearSearchOnRouteChange from "@/components/ClearSearchOnRouteChange";
 
 export default function ProductOrderLayout({
   children,
@@ -51,7 +50,6 @@ export default function ProductOrderLayout({
           ) : null
         }
       />
-      <ClearSearchOnRouteChange />
       <CommonLayout>
         <main
           className={

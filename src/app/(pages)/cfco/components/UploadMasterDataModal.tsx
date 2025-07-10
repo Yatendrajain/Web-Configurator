@@ -10,29 +10,57 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useCallback, useRef, useState } from "react";
 import UploadStep from "./UploadStep";
-import CustomSnackbar from "@/components/CustomSnackbar";
-import { UploadMasterDataApi } from "@/services/cfco/cfco_service";
 import ReviewStep from "./ReviewStep";
+import CustomSnackbar from "@/components/CustomSnackbar";
+import {
+  DiffMasterDataApi,
+  UploadMasterDataApi,
+} from "@/services/cfco/cfco_service";
+import { DiffEntry } from "@/constants/common/enums/diff_entry";
 
-type RowData = Record<string, string | number>;
 interface ModalProps {
   open: boolean;
   onClose: () => void;
 }
 
+const PRODUCT_TYPE_ID = "4af28a55-b142-4348-bc7c-e1ee39578a3e";
+
 const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
   const fileInputRef = useRef<HTMLInputElement>(null!);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileURL, setFileURL] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [sheetData, setSheetData] = useState<RowData[]>([]);
+  const [fileURL, setFileURL] = useState<string>("");
+  const [sheetData, setSheetData] = useState<DiffEntry[]>([]);
   const [step, setStep] = useState<"upload" | "review">("upload");
-  const [showSnackbar, setShowSnackbar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSnackbar, setShowSnackbar] = useState(false);
   const [message, setMessage] = useState("");
   const [snackbarType, setSnackbarType] = useState<
     "success" | "error" | "info" | "warning"
   >("success");
+
+  const showToast = (msg: string, type: typeof snackbarType) => {
+    setMessage(msg);
+    setSnackbarType(type);
+    setShowSnackbar(true);
+  };
+
+  const normalizeDiffData = (rawData: DiffEntry[]): DiffEntry[] => {
+    return rawData.map(
+      (item): DiffEntry => ({
+        changeType: item.changeType,
+        type: item.type || "--",
+        identifier: item.identifier || "--",
+        description: item.description ?? "--",
+        parent: item.parent ?? "--",
+        comment: item.comment ?? "--",
+        changedField: item.changedField ?? "--",
+        oldValue: item.oldValue ?? "--",
+        newValue: item.newValue ?? "--",
+      }),
+    );
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,9 +68,11 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
       alert("Please upload a valid .xlsx file.");
       return;
     }
+
     setSelectedFile(file);
     setUploadProgress(0);
     setStep("upload");
+
     let progress = 0;
     const interval = setInterval(() => {
       progress += 100 / (3000 / 100);
@@ -61,14 +91,12 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
     setFileURL("");
     setStep("upload");
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [
-    setSelectedFile,
-    setUploadProgress,
-    setSheetData,
-    setFileURL,
-    setStep,
-    fileInputRef,
-  ]);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    handleRemoveFile();
+    onClose();
+  }, [onClose]);
 
   const handleNext = async () => {
     if (!selectedFile) return;
@@ -77,47 +105,50 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
-      formData.append("lookup_version", "4af28a55-b142-4348-bc7c-e1ee39578a3e");
+      formData.append("productTypeId", PRODUCT_TYPE_ID);
 
-      const response = await UploadMasterDataApi(formData);
+      const response = await DiffMasterDataApi(formData);
 
       if (response?.error) {
-        setSnackbarType("error");
-        setMessage(response.error);
-        setShowSnackbar(true);
+        showToast(response?.response?.message || response.error, "error");
         return;
       }
 
-      if (response?.response?.data) {
-        setSheetData(response.response.data);
-        setMessage("New version of file has been uploaded successfully");
-        setSnackbarType("success");
-        setShowSnackbar(true);
-        setStep("review");
-      } else {
-        setSnackbarType("error");
-        setMessage("No data received from the server.");
-        setShowSnackbar(true);
-      }
+      const data = normalizeDiffData(response);
+      setSheetData(data);
+      setStep("review");
     } catch (err) {
-      setSnackbarType("error");
-      setMessage(`Unhandled error: ${err}`);
-      setShowSnackbar(true);
+      showToast(`Unhandled error: ${err}`, "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBack = () => setStep("upload");
-  const handleUpload = () => {
-    setShowSnackbar(true);
-    onClose();
-    handleRemoveFile();
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("productTypeId", PRODUCT_TYPE_ID);
+
+      const response = await UploadMasterDataApi(formData);
+
+      if (response?.error) {
+        showToast(response?.response?.message || response.error, "error");
+        return;
+      }
+
+      showToast(response.message, "success");
+    } catch (err) {
+      showToast(`Unhandled error: ${err}`, "error");
+    } finally {
+      setIsLoading(false);
+      onClose();
+      handleRemoveFile();
+    }
   };
-  const handleClose = useCallback(() => {
-    handleRemoveFile();
-    onClose();
-  }, [handleRemoveFile, onClose]);
 
   return (
     <>
@@ -127,14 +158,10 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
         maxWidth={false}
         scroll="body"
         slotProps={{
-          backdrop: {
-            sx: { backgroundColor: "#D9D9D96B" },
-          },
+          backdrop: { sx: { backgroundColor: "#D9D9D96B" } },
           paper: {
             sx: {
-              minWidth: 600,
-              maxWidth: "80vw",
-              width: "fit-content",
+              width: step === "upload" ? 600 : 900,
               borderRadius: 3,
             },
           },
@@ -154,12 +181,7 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
         </DialogTitle>
 
         <DialogContent
-          sx={{
-            maxHeight: "70vh",
-            overflowY: "auto",
-            px: 3,
-            pt: 2,
-          }}
+          sx={{ maxHeight: "70vh", overflowY: "auto", px: 3, pt: 2 }}
         >
           {step === "upload" ? (
             <UploadStep
@@ -180,9 +202,7 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
           )}
         </DialogContent>
 
-        <DialogActions
-          sx={{ justifyContent: "flex-end", paddingBottom: "30px", mt: 2 }}
-        >
+        <DialogActions sx={{ justifyContent: "flex-end", pb: "30px", mt: 2 }}>
           {step === "upload" ? (
             <>
               <Button
@@ -215,7 +235,7 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
           ) : (
             <>
               <Button
-                onClick={handleBack}
+                onClick={() => setStep("upload")}
                 variant="outlined"
                 sx={{
                   textTransform: "none",
@@ -234,7 +254,7 @@ const UploadMasterDataModal: React.FC<ModalProps> = ({ open, onClose }) => {
                   color: "#FFF",
                 }}
               >
-                Upload
+                Submit
               </Button>
             </>
           )}

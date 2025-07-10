@@ -1,166 +1,107 @@
-import { CFCODataRow } from "./models";
-import { ExecuteListLookEntries } from "../list/list_lookup_entries";
-import { ListLookupEntriesRequestSchema } from "../list/models";
-import { ChangeType } from "@/constants/common/lookup_entries_upload";
-import {
-  extractCFCOData,
-  validateFileSize,
-  validateFileType,
-} from "./validations";
-import {
-  ComparedRow,
-  ExcelRow,
-  FlattenedEntry,
-  ResponseData,
-} from "./interfaces";
+import { DiffAndUploadLookupEntriesRequest } from "../common_models/diff_and_upload_req_body";
+import db from "@/db/client";
+import { SessionSchemaDetails } from "../../middlewares/models";
+import { TxType } from "@/constants/api/types/db_types";
+import { validateFileNameAndGetInfo } from "../common_validations/validate_file_name";
+import { validateProductType } from "../common_validations/validate_product_type";
+import { validateVersionNameUniqueness } from "../common_validations/validate_version_name_uniqueness";
+import { validateAndGetDataFromCFCOExcelTab } from "../common_validations/validate_cfco_tab_excel";
+import { validateCFCOsColumns } from "../common_validations/validate_cfco_cols";
+import { validateEmptyCFCOs } from "../common_validations/validate_empty_cfcos";
+import { validateIdentifersCode } from "../common_validations/validate_identifiers_code";
+import { validateDuplicateIdentifiers } from "../common_validations/validate_duplicate_identifiers";
+import { validateMissingCOForCF } from "../common_validations/validate_missing_co_for_cf";
+import { validateDuplicateCFDescs } from "../common_validations/validate_duplicate_cf_desc";
+import { validateCOParentAbsence } from "../common_validations/validate_co_parent_absence";
+import { lookupEntries, lookupVersions } from "@/db/schema";
+import { InferInsertModel } from "drizzle-orm";
+import { CFCODataArraySchemaType } from "../common_models/cfco_file_entries_schema";
+import { LOOKUP_ENTRY_TYPES } from "@/constants/api/enums/lookup_entry_types";
 
-// ---------------------- Main Logic ----------------------
+export const executeUploadLookupEntries = async (
+  req: DiffAndUploadLookupEntriesRequest,
+  session: SessionSchemaDetails,
+): Promise<[object, number]> => {
+  const [res, statusCode] = await db.transaction(async (tx) => {
+    try {
+      const res = await uploadLookupEntries(req, session, tx);
+      return [res, 200];
+    } catch (error) {
+      try {
+        tx.rollback();
+      } finally {
+        throw error;
+      }
+    }
+  });
 
-export async function processUploadedCFCOFile(
-  file: Blob,
-  lookupVersionId: string,
-  fileName: string,
-) {
-  if (!file || !(file instanceof Blob)) {
-    return {
-      error: true,
-      status: 400,
-      response: { message: "Invalid file" },
-    };
-  }
-  // validate file type
-  debugger;
-  validateFileType(fileName);
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  validateFileSize(buffer);
+  return [res, statusCode];
+};
 
-  const payload = {
-    filters: {
-      type: "CF",
-      productTypeId: lookupVersionId,
-    },
-    includeFields: {
-      lookupVersions: ["id", "versionName"],
-      availableIdentifiers: ["id", "identifier", "description"],
-      lookupEntries: ["identifier", "description"],
-    },
-    showMapping: true,
-    maxPageLimit: true,
-    getLatestVersionData: true,
+const uploadLookupEntries = async (
+  req: DiffAndUploadLookupEntriesRequest,
+  session: SessionSchemaDetails,
+  tx: TxType,
+): Promise<object> => {
+  const [cfcos, versionName, fileName] = await applyValidations(req);
+
+  type LookupVersionInsert = InferInsertModel<typeof lookupVersions>;
+  type LookupEntryInsert = InferInsertModel<typeof lookupEntries>;
+
+  const lookupVersionInsertData: LookupVersionInsert = {
+    productTypeId: req.productTypeId,
+    versionName: versionName as string,
+    uploadedByUserId: session.id,
+    fileName: fileName as string,
   };
 
-  const [res] = await ExecuteListLookEntries(
-    ListLookupEntriesRequestSchema.parse(payload),
-  );
+  const [{ lookupVersionId }] = await tx
+    .insert(lookupVersions)
+    .values(lookupVersionInsertData)
+    .returning({ lookupVersionId: lookupVersions.id });
 
-  let parsedData: CFCODataRow[];
-  try {
-    parsedData = extractCFCOData(buffer);
-  } catch (err) {
+  const lookupEntriesInsertData: Array<LookupEntryInsert> = cfcos.map((row) => {
     return {
-      error: true,
-      status: 400,
-      response: { message: (err as Error).message },
+      lookupVersionId: lookupVersionId,
+      parent: row.Parent,
+      identifier: row.Identifier,
+      type: row.Type,
+      inputType: LOOKUP_ENTRY_TYPES.CO,
+      description: row.Description,
     };
-  }
+  });
 
-  const compareData = await compareDescriptions(
-    parsedData as ExcelRow[],
-    res as ResponseData,
-  );
+  await tx.insert(lookupEntries).values(lookupEntriesInsertData);
 
   return {
-    error: false,
-    status: 200,
-    response: {
-      data: compareData,
-    },
+    lookupVersionId: lookupVersionId,
+    versionName: versionName,
+    productTypeId: req.productTypeId,
+    message: "Lookup entries uploaded successfully!",
   };
-}
+};
 
-// ---------------------- Async Comparison Logic ----------------------
+const applyValidations = async (
+  req: DiffAndUploadLookupEntriesRequest,
+): Promise<[CFCODataArraySchemaType, string, string]> => {
+  const [versionName, productTypeFileName] = validateFileNameAndGetInfo(
+    req.file.name,
+  );
+  const identifierCode = await validateProductType(
+    req.productTypeId,
+    productTypeFileName,
+  );
+  await validateVersionNameUniqueness(versionName, req.productTypeId);
 
-async function compareDescriptions(
-  excelData: ExcelRow[],
-  responseData: ResponseData,
-): Promise<ComparedRow[]> {
-  const flattened: FlattenedEntry[] = await flatternData(responseData);
+  //todo: convert it to class to avoid copying data for every call
+  const rawCFCOs = await validateAndGetDataFromCFCOExcelTab(req.file);
+  const cfcos = validateCFCOsColumns(rawCFCOs);
+  validateEmptyCFCOs(cfcos);
+  validateIdentifersCode(cfcos, identifierCode);
+  validateDuplicateIdentifiers(cfcos);
+  validateMissingCOForCF(cfcos);
+  validateDuplicateCFDescs(cfcos);
+  validateCOParentAbsence(cfcos);
 
-  const result: ComparedRow[] = [];
-  const seenIdentifiers = new Set<string>();
-
-  for (const excelEntry of excelData) {
-    const match = flattened.find(
-      (item) =>
-        item.Identifier === excelEntry.Identifier &&
-        item.Type === excelEntry.Type,
-    );
-
-    seenIdentifiers.add(excelEntry.Identifier);
-
-    if (!match) {
-      // New entry in Excel, not found in DB
-      result.push({
-        "Change Type": ChangeType.ADDED,
-        ...excelEntry,
-        "Old Value": "",
-        "New Value": excelEntry.Description,
-      });
-      continue;
-    }
-
-    const isChanged =
-      match.Description.trim() !== excelEntry.Description.trim();
-
-    result.push({
-      "Change Type": isChanged ? ChangeType.MODIFIED : ChangeType.UNCHANGED,
-      ...excelEntry,
-      "Old Value": match.Description,
-      "New Value": isChanged ? excelEntry.Description : "--",
-    });
-  }
-
-  // Find deleted items (present in DB but not in Excel)
-  for (const dbEntry of flattened) {
-    if (!seenIdentifiers.has(dbEntry.Identifier)) {
-      result.push({
-        "Change Type": ChangeType.REMOVED,
-        Type: dbEntry.Type,
-        Identifier: dbEntry.Identifier,
-        Description: "",
-        Parent: "",
-        "Comment 1": "",
-        "Comment 2": "",
-        "Old Value": dbEntry.Description,
-        "New Value": "",
-      });
-    }
-  }
-
-  return result;
-}
-
-const flatternData = async (responseData: ResponseData) => {
-  const flattened: FlattenedEntry[] = [];
-  for (const group of responseData.list) {
-    // Add CF
-    flattened.push({
-      Type: "CF",
-      Identifier: group.identifier,
-      Description: group.description || "",
-      versionName: group.lookupVersionDetails?.versionName || "",
-    });
-
-    // Add COs
-    for (const co of group.availableIdentifiers || []) {
-      flattened.push({
-        Type: "CO",
-        Identifier: co.identifier,
-        Description: co.description || "",
-        versionName: group.lookupVersionDetails?.versionName || "",
-      });
-    }
-  }
-  return flattened;
+  return [cfcos, versionName, req.file.name];
 };
